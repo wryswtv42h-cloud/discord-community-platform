@@ -1,0 +1,162 @@
+:root {
+  --bg: #09070f;
+  --bg-2: #120c1d;
+  --side: #0c0814;
+  --panel: rgba(20, 13, 31, .96);
+  --card: rgba(29, 18, 43, .94);
+  --line: rgba(241, 205, 233, .2);
+  --text: #fff8ff;
+  --muted: #c7b4c8;
+  --silver: #f8eff7;
+  --pearl: #f2cde7;
+  --lav: #d6b4d5;
+  --soft: #f7dff0;
+  --pink: #f0aeda;
+  --purple: #a959b4;
+  --green: #62e0ae;
+}
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(193, 82, 205, .3),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 18%,
+      rgba(239, 168, 225, .16),
+      transparent 25%
+    ),
+    linear-gradient(135deg, #0a0710 0%, #171025 48%, #08060d 100%);
+}
+
+header {
+  background: rgba(12, 7, 18, .88);
+  border-bottom-color: rgba(241, 205, 233, .18);
+}
+
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 9, 28, .98),
+      rgba(8, 6, 13, .98)
+    );
+  border-left-color: rgba(241, 205, 233, .18);
+}
+
+.serverCard,
+.statCard,
+.panelSection,
+.memberCard,
+.infoCard,
+.groupCard,
+.gameCard,
+.ratingCard,
+.leaderCard {
+  background: linear-gradient(
+    145deg,
+    rgba(31, 20, 47, .96),
+    rgba(14, 11, 23, .94)
+  );
+  border-color: rgba(241, 205, 233, .2);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .2);
+}
+
+.brandMark,
+.btn:not(.ghost),
+.memberAvatar {
+  background: linear-gradient(
+    135deg,
+    #fffaff 0%,
+    #f0cde7 48%,
+    #b85cc0 100%
+  );
+}
+
+.btn:not(.ghost) {
+  color: #210d27;
+}
+
+.btn:not(.ghost):hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+}
+
+.btn.ghost,
+.iconBtn {
+  color: var(--text);
+  border-color: rgba(241, 205, 233, .3);
+}
+
+.heroShell {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(14, 6, 20, .18),
+      rgba(8, 5, 13, .7)
+    ),
+    url('/server-banner.svg') center / cover no-repeat !important;
+  border-color: rgba(241, 205, 233, .25);
+}
+
+.heroShell::before {
+  background: linear-gradient(
+    90deg,
+    rgba(130, 50, 150, .2),
+    rgba(242, 205, 231, .65),
+    rgba(130, 50, 150, .2)
+  );
+}
+
+.heroShell::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, .08),
+    rgba(190, 88, 198, .55),
+    rgba(255, 255, 255, .08)
+  );
+}
+
+.heroContent h1 {
+  background: linear-gradient(
+    110deg,
+    #fffaff 10%,
+    #f0cde7 52%,
+    #c66bd0 88%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heroBadge,
+.heroMeta span,
+.cardPill {
+  color: var(--soft);
+  border-color: rgba(241, 205, 233, .28);
+  background: rgba(120, 52, 132, .2);
+}
+
+nav a:hover,
+nav a.active {
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    rgba(143, 71, 157, .55),
+    rgba(255, 255, 255, .04)
+  );
+  box-shadow: inset -3px 0 0 var(--pink);
+}
+
+.modal {
+  background: rgba(5, 2, 10, .82);
+}
+
+.modalCard {
+  background:
+    linear-gradient(145deg, #24102f, #0e0915);
+  border-color: rgba(241, 205, 233, .28);
+}
