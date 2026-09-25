@@ -1,0 +1,145 @@
+:root {
+  --mld-purple: #a85baa;
+  --mld-pink: #f0cde7;
+  --mld-dark: #0d0913;
+  --mld-line: rgba(255,255,255,.14);
+}
+
+.platformDrawer {
+  position: fixed;
+  z-index: 200;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(350px, 88vw);
+  padding: 24px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(24,12,32,.98), rgba(10,8,15,.99));
+  border-left: 1px solid var(--mld-line);
+  box-shadow: -25px 0 70px rgba(0,0,0,.5);
+  transform: translateX(110%);
+  transition: transform .25s ease;
+}
+
+.platformDrawer.open {
+  transform: translateX(0);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  color: #fff;
+  font-size: 20px;
+}
+
+.platformDrawer a {
+  display: block;
+  padding: 14px 12px;
+  margin-bottom: 6px;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid var(--mld-line);
+  border-radius: 12px;
+}
+
+.platformDrawer a:hover {
+  color: var(--mld-pink);
+  background: rgba(255,255,255,.07);
+}
+
+#platformMenuBtn {
+  display: inline-grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.featureHint,
+.mediaForm small {
+  color: var(--muted);
+}
+
+.mediaForm {
+  display: grid;
+  gap: 12px;
+  max-width: 700px;
+}
+
+.mediaForm input,
+.mediaForm select,
+.mediaForm textarea {
+  width: 100%;
+  padding: 13px;
+  color: var(--text);
+  background: rgba(17,24,36,.9);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.memberPickerResults {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.memberPickerItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  color: var(--text);
+  text-align: right;
+  cursor: pointer;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.memberPickerItem:hover {
+  background: rgba(255,255,255,.1);
+}
+
+.memberPickerItem img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.memberPickerItem span {
+  display: grid;
+}
+
+.memberPickerItem small {
+  color: var(--muted);
+}
+
+.cinemaCard {
+  overflow: hidden;
+  background: rgba(17,24,36,.9);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.cinemaCard img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.cinemaCardBody {
+  padding: 16px;
+}
+
+@media (max-width: 600px) {
+  .platformDrawer {
+    width: 90vw;
+  }
+
+  .mediaForm {
+    max-width: 100%;
+  }
+}
