@@ -12,140 +12,24 @@
   </head>
   <body>
     <aside class="sidebar" id="sidebar">
-      <div class="brand" aria-label="شعار السيرفر">
-        <div class="brandMark">MLD</div>
-        <div>
-          <strong>ملاذ</strong>
-          <small>COMMUNITY HUB</small>
-        </div>
-      </div>
-
-      <div class="serverCard">
-        <div class="serverAvatar">
-          <img id="serverAvatar" src="/server-avatar.svg" alt="ملاذ" />
-        </div>
-        <div class="serverText">
-          <b>ملاذ</b>
-          <small>مبني على هوية MLD</small>
-        </div>
-        <span class="onlinePulse">●</span>
-      </div>
-
-      <nav>
-        <a href="#home" class="active"><span>🏠</span><span>الرئيسية</span></a>
-        <a href="#members"><span>👥</span><span>الأعضاء</span></a>
-        <a href="#groups"><span>💬</span><span>القروبات</span></a>
-        <a href="#games"><span>🎮</span><span>الألعاب</span></a>
-        <a href="#leaderboard"><span>🏆</span><span>التوب</span></a>
-        <a href="#ratings"><span>⭐</span><span>التقييمات</span></a>
-      </nav>
-
-      <div class="sideBottom">
-        <a href="#" class="supportSide" id="sidebarAuthLink"><span>🔐</span><span>تسجيل الدخول</span></a>
-      </div>
+      <div class="brand" aria-label="شعار السيرفر"><div class="brandMark">MLD</div><div><strong>ملاذ</strong><small>COMMUNITY HUB</small></div></div>
+      <div class="serverCard"><div class="serverAvatar"><img id="serverAvatar" src="/server-avatar.svg" alt="ملاذ" /></div><div class="serverText"><b>ملاذ</b><small>مبني على هوية MLD</small></div><span class="onlinePulse">●</span></div>
+      <nav><a href="#home" class="active"><span>🏠</span><span>الرئيسية</span></a><a href="#members"><span>👥</span><span>الأعضاء</span></a><a href="#groups"><span>💬</span><span>القروبات</span></a><a href="#games"><span>🎮</span><span>الألعاب</span></a><a href="#leaderboard"><span>🏆</span><span>التوب</span></a><a href="#ratings"><span>⭐</span><span>التقييمات</span></a></nav>
+      <div class="sideBottom"><a href="#" class="supportSide" id="sidebarAuthLink"><span>🔐</span><span>تسجيل الدخول</span></a></div>
     </aside>
-
     <main class="main" id="main">
-      <header>
-        <div class="breadcrumb">
-          <span>ملاذ</span>
-          <span>›</span>
-          <b>الرئيسية</b>
-        </div>
-        <div class="headerActions">
-          <span class="liveDot">● مباشر</span>
-          <button class="iconBtn mobileMenu" aria-label="قائمة">☰</button>
-          <div id="authNav" class="authNav"></div>
-        </div>
-      </header>
-
+      <header><div class="breadcrumb"><span>ملاذ</span><span>›</span><b>الرئيسية</b></div><div class="headerActions"><span class="liveDot">● مباشر</span><button class="iconBtn mobileMenu" aria-label="قائمة">☰</button><div id="authNav" class="authNav"></div></div></header>
       <div class="page">
-        <section id="home" class="heroWrap">
-          <div class="heroShell">
-            <div class="heroContent">
-              <div class="heroBadge">OFFICIAL COMMUNITY</div>
-              <h1 id="serverName">ملاذ</h1>
-              <p id="serverWelcome">حياكم الله في ملاذ — مجتمعكم الآمن للعب والتجمع والاستمتاع.</p>
-              <div class="heroMeta">
-                <span id="heroOwner">المنشئ: فهد المطيري</span>
-                <span id="heroOnline">● 0 أعضاء متصلين</span>
-                <span id="heroVisits">◈ 0 زيارة</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="statsStrip">
-          <div class="statCard">
-            <span>الأعضاء</span>
-            <strong id="memberCount">0</strong>
-          </div>
-          <div class="statCard">
-            <span>الزيارات</span>
-            <strong id="visitCount">0</strong>
-          </div>
-          <div class="statCard">
-            <span>العاب</span>
-            <strong id="gamesCount">0</strong>
-          </div>
-          <div class="statCard">
-            <span>قروبات</span>
-            <strong id="groupsCount">0</strong>
-          </div>
-        </section>
-
-        <section class="panelSection" id="members">
-          <div class="sectionTitle">
-            <h2>الأعضاء المتصلين</h2>
-            <button class="btn ghost" type="button" id="createGroupBtn">إنشاء قروب</button>
-          </div>
-          <div class="searchWrap">
-            <input id="memberSearchInput" type="text" placeholder="ابحث عن عضو..." />
-            <button class="btn" id="searchMemberBtn" type="button">بحث</button>
-          </div>
-          <div class="memberGrid" id="memberList"></div>
-        </section>
-
-        <section class="panelSection" id="groups">
-          <div class="sectionTitle">
-            <h2>القروبات</h2>
-            <button class="btn" type="button" id="newGroupBtn">+ قروب جديد</button>
-          </div>
-          <div class="cardGrid" id="groupsList"></div>
-        </section>
-
-        <section class="panelSection" id="games">
-          <div class="sectionTitle">
-            <h2>الألعاب</h2>
-            <button class="btn" type="button" id="newGameBtn">+ جلسة جديدة</button>
-          </div>
-          <div class="cardGrid" id="gamesList"></div>
-        </section>
-
-        <section class="panelSection" id="leaderboard">
-          <div class="sectionTitle">
-            <h2>توب الألعاب</h2>
-          </div>
-          <div class="leaderboard" id="leaderboardList"></div>
-        </section>
-
-        <section class="panelSection" id="ratings">
-          <div class="sectionTitle">
-            <h2>التقييمات</h2>
-            <button class="btn" type="button" id="addRatingBtn">تقييم الآن</button>
-          </div>
-          <div class="ratingList" id="ratingsList"></div>
-        </section>
+        <section id="home" class="heroWrap"><div class="heroShell"><div class="heroContent"><div class="heroBadge">OFFICIAL COMMUNITY</div><h1 id="serverName">ملاذ</h1><p id="serverWelcome">حياكم الله في ملاذ — مجتمعكم الآمن للعب والتجمع والاستمتاع.</p><div class="heroMeta"><span id="heroOwner">المنشئ: فهد المطيري</span><span id="heroOnline">● 0 أعضاء متصلين</span><span id="heroVisits">◈ 0 زيارة</span></div></div></div></section>
+        <section class="statsStrip"><div class="statCard"><span>الأعضاء</span><strong id="memberCount">0</strong></div><div class="statCard"><span>الزيارات</span><strong id="visitCount">0</strong></div><div class="statCard"><span>العاب</span><strong id="gamesCount">0</strong></div><div class="statCard"><span>قروبات</span><strong id="groupsCount">0</strong></div></section>
+        <section class="panelSection" id="members"><div class="sectionTitle"><h2>الأعضاء المتصلين</h2><button class="btn ghost" type="button" id="createGroupBtn">إن��اء قروب</button></div><div class="searchWrap"><input id="memberSearchInput" type="text" placeholder="ابحث عن عضو..." /><button class="btn" id="searchMemberBtn" type="button">بحث</button></div><div class="memberGrid" id="memberList"></div></section>
+        <section class="panelSection" id="groups"><div class="sectionTitle"><h2>القروبات</h2><button class="btn" type="button" id="newGroupBtn">+ قروب جديد</button></div><div class="cardGrid" id="groupsList"></div></section>
+        <section class="panelSection" id="games"><div class="sectionTitle"><h2>الألعاب</h2><button class="btn" type="button" id="newGameBtn">+ جلسة جديدة</button></div><div class="cardGrid" id="gamesList"></div></section>
+        <section class="panelSection" id="leaderboard"><div class="sectionTitle"><h2>توب الألعاب</h2></div><div class="leaderboard" id="leaderboardList"></div></section>
+        <section class="panelSection" id="ratings"><div class="sectionTitle"><h2>التقييمات</h2><button class="btn" type="button" id="addRatingBtn">تقييم الآن</button></div><div class="ratingList" id="ratingsList"></div></section>
       </div>
     </main>
+    <div class="modal" id="authModal" aria-hidden="true"><div class="modalCard"><button class="modalClose" type="button" id="closeModalBtn">×</button><div id="modalContent"></div></div></div>
+    <script src="/app.js"></script><script src="/member-picker.js"></script>
   </body>
-
-  <div class="modal" id="authModal" aria-hidden="true">
-    <div class="modalCard">
-      <button class="modalClose" type="button" id="closeModalBtn">×</button>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <script src="/app.js"></script>
 </html>
