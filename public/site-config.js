@@ -1,8 +1,7 @@
-/* عدّل هذه القيم لتخصيص الموقع لسيرفرك */
 window.SITE_CONFIG = {
-  name: 'سيرفر MLD',
+  name: 'ملاذ',
   owner: 'فهد المطيري',
-  avatar: '/server-avatar.png',
-  banner: '/server-banner.png',
-  welcome: 'حياكم الله في مجتمعنا — العبوا، تجمعوا، واستمتعوا معاً.'
+  avatar: '/server-avatar.svg',
+  banner: '/server-banner.svg',
+  welcome: 'حياكم الله في ملاذ — مجتمعكم الآمن للعب والتجمع والاستمتاع.'
 };
