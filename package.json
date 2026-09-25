@@ -1,0 +1,20 @@
+{
+  "name": "discord-community-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import ./services/discord-bots.js server.js",
+    "dev": "node --watch --import ./services/discord-bots.js server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "discord.js": "^14.16.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
