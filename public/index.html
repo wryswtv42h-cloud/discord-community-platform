@@ -1,247 +1,151 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>زاجل | Community Hub</title>
-  <link rel="stylesheet" href="/style.css" />
-</head>
-<body>
-  <div id="toast"></div>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="brandMark">Z</div>
-      <div>
-        <b>زاجل</b>
-        <small>COMMUNITY HUB</small>
-      </div>
-    </div>
-
-    <div class="serverCard">
-      <div class="serverAvatar">✦</div>
-      <div>
-        <b>سيرفر زاجل</b>
-        <small><i></i> متصل الآن</small>
-      </div>
-      <span>⌄</span>
-    </div>
-
-    <nav>
-      <a class="active" href="#home"><span>⌂</span><span>الرئيسية</span></a>
-      <a href="#games"><span>♟</span><span>الألعاب</span><em>جديد</em></a>
-      <a href="#groups"><span>♧</span><span>القروبات</span></a>
-      <a href="#cinema"><span>▣</span><span>السينما</span></a>
-      <a href="#control"><span>↓</span><span>الكنترول</span></a>
-      <a href="#members"><span>♙</span><span>الأعضاء</span><strong id="onlineCount">0</strong></a>
-      <a href="#ratings"><span>★</span><span>التقييمات</span></a>
-    </nav>
-
-    <div class="sideBottom">
-      <a class="supportSide" href="https://discord.com/users/w4px" target="_blank" rel="noreferrer">◉ <span>الدعم</span></a>
-      <div id="authSide"></div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <header>
-      <button class="mobileMenu" aria-label="فتح القائمة">☰</button>
-      <div class="breadcrumb">
-        الرئيسية <span>/</span> <b id="pageTitle">نظرة عامة</b>
-      </div>
-
-      <div class="headerActions">
-        <span class="liveDot">● متصل</span>
-        <button class="iconBtn" aria-label="بحث">⌕</button>
-        <div id="authNav">
-          <button class="btn ghost" onclick="openAuth('login')">دخول</button>
-          <button class="btn" onclick="openAuth('register')">إنشاء حساب</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ملاذ | Community Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/site-config.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand" aria-label="شعار السيرفر">
+        <div class="brandMark">MLD</div>
+        <div>
+          <strong>ملاذ</strong>
+          <small>COMMUNITY HUB</small>
         </div>
       </div>
-    </header>
 
-    <section id="home" class="page">
-      <div class="welcome">
-        <div>
-          <span class="eyebrow">أهلاً بك في مساحتك</span>
-          <h1>كل شيء لمجتمعك<br><em>في مكان واحد.</em></h1>
-          <p>العب، تواصل، وشاهد مع أصدقائك بتجربة مصممة خصيصاً لسيرفر Discord الخاص بك.</p>
-          <div class="actions">
-            <a class="btn" href="#games">استكشف المنصة ←</a>
-            <a class="textLink" href="#groups">تصفح القروبات</a>
+      <div class="serverCard">
+        <div class="serverAvatar">
+          <img id="serverAvatar" src="/server-avatar.svg" alt="ملاذ" />
+        </div>
+        <div class="serverText">
+          <b>ملاذ</b>
+          <small>مبني على هوية MLD</small>
+        </div>
+        <span class="onlinePulse">●</span>
+      </div>
+
+      <nav>
+        <a href="#home" class="active"><span>🏠</span><span>الرئيسية</span></a>
+        <a href="#members"><span>👥</span><span>الأعضاء</span></a>
+        <a href="#groups"><span>💬</span><span>القروبات</span></a>
+        <a href="#games"><span>🎮</span><span>الألعاب</span></a>
+        <a href="#leaderboard"><span>🏆</span><span>التوب</span></a>
+        <a href="#ratings"><span>⭐</span><span>التقييمات</span></a>
+      </nav>
+
+      <div class="sideBottom">
+        <a href="#" class="supportSide" id="sidebarAuthLink"><span>🔐</span><span>تسجيل الدخول</span></a>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <header>
+        <div class="breadcrumb">
+          <span>ملاذ</span>
+          <span>›</span>
+          <b>الرئيسية</b>
+        </div>
+        <div class="headerActions">
+          <span class="liveDot">● مباشر</span>
+          <button class="iconBtn mobileMenu" aria-label="قائمة">☰</button>
+          <div id="authNav" class="authNav"></div>
+        </div>
+      </header>
+
+      <div class="page">
+        <section id="home" class="heroWrap">
+          <div class="heroShell">
+            <div class="heroContent">
+              <div class="heroBadge">OFFICIAL COMMUNITY</div>
+              <h1 id="serverName">ملاذ</h1>
+              <p id="serverWelcome">حياكم الله في ملاذ — مجتمعكم الآمن للعب والتجمع والاستمتاع.</p>
+              <div class="heroMeta">
+                <span id="heroOwner">المنشئ: فهد المطيري</span>
+                <span id="heroOnline">● 0 أعضاء متصلين</span>
+                <span id="heroVisits">◈ 0 زيارة</span>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div class="heroArt">
-          <div class="ring"></div>
-          <div class="heroAvatar">✦</div>
-          <div class="floatCard fc1"><span>🎮</span><div><b>12</b><small>جلسة نشطة</small></div></div>
-          <div class="floatCard fc2"><span>●</span><div><b>248</b><small>عضو متصل</small></div></div>
-        </div>
+        <section class="statsStrip">
+          <div class="statCard">
+            <span>الأعضاء</span>
+            <strong id="memberCount">0</strong>
+          </div>
+          <div class="statCard">
+            <span>الزيارات</span>
+            <strong id="visitCount">0</strong>
+          </div>
+          <div class="statCard">
+            <span>العاب</span>
+            <strong id="gamesCount">0</strong>
+          </div>
+          <div class="statCard">
+            <span>قروبات</span>
+            <strong id="groupsCount">0</strong>
+          </div>
+        </section>
+
+        <section class="panelSection" id="members">
+          <div class="sectionTitle">
+            <h2>الأعضاء المتصلين</h2>
+            <button class="btn ghost" type="button" id="createGroupBtn">إنشاء قروب</button>
+          </div>
+          <div class="searchWrap">
+            <input id="memberSearchInput" type="text" placeholder="ابحث عن عضو..." />
+            <button class="btn" id="searchMemberBtn" type="button">بحث</button>
+          </div>
+          <div class="memberGrid" id="memberList"></div>
+        </section>
+
+        <section class="panelSection" id="groups">
+          <div class="sectionTitle">
+            <h2>القروبات</h2>
+            <button class="btn" type="button" id="newGroupBtn">+ قروب جديد</button>
+          </div>
+          <div class="cardGrid" id="groupsList"></div>
+        </section>
+
+        <section class="panelSection" id="games">
+          <div class="sectionTitle">
+            <h2>الألعاب</h2>
+            <button class="btn" type="button" id="newGameBtn">+ جلسة جديدة</button>
+          </div>
+          <div class="cardGrid" id="gamesList"></div>
+        </section>
+
+        <section class="panelSection" id="leaderboard">
+          <div class="sectionTitle">
+            <h2>توب الألعاب</h2>
+          </div>
+          <div class="leaderboard" id="leaderboardList"></div>
+        </section>
+
+        <section class="panelSection" id="ratings">
+          <div class="sectionTitle">
+            <h2>التقييمات</h2>
+            <button class="btn" type="button" id="addRatingBtn">تقييم الآن</button>
+          </div>
+          <div class="ratingList" id="ratingsList"></div>
+        </section>
       </div>
+    </main>
+  </body>
 
-      <div class="metrics">
-        <div>
-          <span class="metricIcon purple">◈</span>
-          <div><b id="visits">0</b><small>زيارة للموقع</small></div>
-        </div>
-        <div>
-          <span class="metricIcon blue">♙</span>
-          <div><b id="membersMetric">248</b><small>عضو في السيرفر</small></div>
-        </div>
-        <div>
-          <span class="metricIcon pink">♟</span>
-          <div><b id="sessionsMetric">12</b><small>جلسة نشطة</small></div>
-        </div>
-        <div>
-          <span class="metricIcon gold">★</span>
-          <div><b>4.9</b><small>تقييم المجتمع</small></div>
-        </div>
-      </div>
-
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">QUICK ACCESS</span>
-          <h2>وش تبي تسوي اليوم؟</h2>
-        </div>
-      </div>
-
-      <div class="quickGrid">
-        <a href="#games" class="quick purpleBg">
-          <span>♟</span>
-          <div><b>العب مع أصحابك</b><small>أنشئ جلسة جديدة أو انضم لجلسة</small></div>
-          <i>←</i>
-        </a>
-        <a href="#cinema" class="quick blueBg">
-          <span>▶</span>
-          <div><b>شاهدوا معاً</b><small>اختار فيلم وابدأ حفلة مشاهدة</small></div>
-          <i>←</i>
-        </a>
-        <a href="#control" class="quick pinkBg">
-          <span>↓</span>
-          <div><b>حمّل بجودة عالية</b><small>روابطك وملفاتك في مكان واحد</small></div>
-          <i>←</i>
-        </a>
-      </div>
-    </section>
-
-    <section id="games" class="page">
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">PLAY TOGETHER</span>
-          <h2>الألعاب والجلسات</h2>
-          <p>اختر لعبة وانضم لأصدقائك أو العب ضد البوت.</p>
-        </div>
-        <button class="btn" onclick="requireLogin(createGame)">+ إنشاء جلسة</button>
-      </div>
-
-      <div class="gameFilters">
-        <button class="selected">الكل</button>
-        <button>أونو</button>
-        <button>بالوت</button>
-        <button>جاكارو</button>
-        <button>قريباً</button>
-      </div>
-
-      <div class="cards" id="gamesList"></div>
-    </section>
-
-    <section id="groups" class="page">
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">YOUR PEOPLE</span>
-          <h2>القروبات</h2>
-          <p>تجمعات خاصة داخل سيرفر Discord.</p>
-        </div>
-        <button class="btn" onclick="requireLogin(createGroup)">+ إنشاء قروب</button>
-      </div>
-      <div class="cards" id="groupsList"></div>
-    </section>
-
-    <section id="cinema" class="page">
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">WATCH PARTY</span>
-          <h2>السينما</h2>
-          <p>اختار فيلم، حدد روم صوتي، والبوت يبدأ العرض للجميع.</p>
-        </div>
-      </div>
-
-      <div class="cinemaBanner">
-        <div>
-          <span class="tag">تجربة جديدة</span>
-          <h2>ليلة فيلم؟ 🍿</h2>
-          <p>شاهد أفلامك ومسلسلاتك المصرح بها مع أصدقائك بمزامنة كاملة.</p>
-          <button class="btn" onclick="openCinema()">تصفح الأفلام</button>
-        </div>
-        <div class="posterStack">
-          <div>▶</div>
-          <div>✦</div>
-          <div>●</div>
-        </div>
-      </div>
-
-      <div class="movieGrid" id="movieList"></div>
-    </section>
-
-    <section id="control" class="page">
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">CONTROL CENTER</span>
-          <h2>الكنترول</h2>
-          <p>تحميل محتوى تملك حق تنزيله من الروابط العامة والمصرح بها.</p>
-        </div>
-      </div>
-
-      <div class="downloadBox">
-        <div class="downloadIcon">↓</div>
-        <h3>حمّل بجودة عالية</h3>
-        <p>الصق رابط الفيديو أو الصورة أو الافتار أو الستوري، وسنحلله لك.</p>
-        <div class="downloadInput">
-          <input id="downloadUrl" placeholder="https://youtube.com/... أو رابط مباشر" />
-          <select id="downloadQuality">
-            <option value="best">أفضل جودة متاحة</option>
-            <option value="1080">1080p</option>
-            <option value="720">720p</option>
-            <option value="audio">صوت فقط</option>
-          </select>
-          <button class="btn" onclick="startDownload()">تحليل الرابط</button>
-        </div>
-        <small class="notice">يدعم فقط المحتوى الذي تملك حق تنزيله وواجهات المنصات المسموح بها. لا نتجاوز الحماية أو الخصوصية.</small>
-      </div>
-    </section>
-
-    <section id="members" class="page">
-      <div class="sectionHead">
-        <div>
-          <span class="eyebrow">COMMUNITY</span>
-          <h2>الأعضاء المتصلين</h2>
-        </div>
-      </div>
-      <div class="memberPanel">
-        <div class="memberList" id="memberList"></div>
-      </div>
-    </section>
-
-    <section id="ratings" class="page ratingPage">
-      <span class="eyebrow">COMMUNITY VOICE</span>
-      <h2>آراء الأعضاء</h2>
-      <div id="ratings"></div>
-      <button class="btn" onclick="requireLogin(rate)">قيّم الموقع</button>
-    </section>
-  </main>
-
-  <a class="support" href="https://discord.com/users/w4px" target="_blank" rel="noreferrer">◉</a>
-
-  <div class="modal" id="modal">
-    <div class="modalBox">
-      <button class="close" onclick="closeModal()">×</button>
-      <div id="modalBody"></div>
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modalCard">
+      <button class="modalClose" type="button" id="closeModalBtn">×</button>
+      <div id="modalContent"></div>
     </div>
   </div>
 
-  <footer>© 2026 زاجل · مجتمعك، بطريقتك</footer>
-
   <script src="/app.js"></script>
-</body>
 </html>
