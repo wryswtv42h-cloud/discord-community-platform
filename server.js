@@ -1,323 +1,59 @@
-let token = localStorage.getItem('token');
-let me = null;
+import express from 'express';
+import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
-const $ = (selector) => document.querySelector(selector);
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#039;'
-}[char]));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dataDir = path.join(__dirname, 'data');
+const dbFile = path.join(dataDir, 'store.json');
+fs.mkdirSync(dataDir, { recursive: true });
 
-function toast(message) {
-  const node = document.createElement('div');
-  node.className = 'toast';
-  node.textContent = message;
-  document.body.appendChild(node);
-  setTimeout(() => node.remove(), 3500);
-}
+const defaults = { users: [], groups: [], games: [], ratings: [], logs: [], cinemaSessions: [], downloads: [], stats: { visits: 0 }, seed: false, cinemaCatalog: [
+  { id: 'movie-1', title: 'مغامرة في المجهول', type: 'فيلم', year: 2026, image: '#352766' },
+  { id: 'movie-2', title: 'ليلة المدينة', type: 'مسلسل', year: 2026, image: '#244d67' },
+  { id: 'movie-3', title: 'رحلة النجوم', type: 'فيلم', year: 2025, image: '#63294e' },
+  { id: 'movie-4', title: 'The Last Game', type: 'فيلم', year: 2026, image: '#344d39' },
+  { id: 'movie-5', title: 'عالم آخر', type: 'مسلسل', year: 2024, image: '#6b4224' }
+] };
 
-async function api(url, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  const finalOptions = { ...options, headers };
-  if (token) finalOptions.headers.Authorization = 'Bearer ' + token;
+let db = fs.existsSync(dbFile) ? JSON.parse(fs.readFileSync(dbFile, 'utf8')) : defaults;
+for (const key of Object.keys(defaults)) if (db[key] === undefined) db[key] = defaults[key];
+const save = () => fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
+const id = () => crypto.randomUUID();
+const now = () => new Date().toISOString();
+const secret = process.env.JWT_SECRET || 'change-this-in-railway';
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-  const res = await fetch('/api' + url, finalOptions);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'حدث خطأ غير متوقع');
-  return data;
-}
+function log(action, userId = null, meta = {}) { db.logs.unshift({ id: id(), action, userId, meta, at: now() }); db.logs = db.logs.slice(0, 3000); save(); }
+function auth(req, res, next) { const token = (req.headers.authorization || '').replace('Bearer ', ''); try { req.user = jwt.verify(token, secret); next(); } catch { res.status(401).json({ error: 'يجب تسجيل الدخول' }); } }
+function safeUser(user) { return { id: user.id, username: user.username, points: user.points, role: user.role, createdAt: user.createdAt }; }
+function seed() { if (db.seed) return; const username = process.env.ADMIN_USERNAME || 'admin'; const password = process.env.ADMIN_PASSWORD || 'change-me-now'; db.users.push({ id: id(), username, password: bcrypt.hashSync(password, 10), role: 'admin', points: 0, createdAt: now() }); db.seed = true; save(); console.log(`Admin account: ${username}`); }
+seed();
 
-function openAuth(type) {
-  $('#modalBody').innerHTML = `
-    <h2>${type === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'}</h2>
-    <p style="color:#8993ad;font-size:12px">${type === 'login' ? 'أهلاً بعودتك إلى مجتمعك' : 'أنشئ حسابك خلال ثواني'}</p>
-    <input id="username" placeholder="اسم المستخدم" />
-    <input id="password" type="password" placeholder="الرمز السري" />
-    <button class="btn" style="width:100%;margin-top:10px" onclick="submitAuth('${type}')">${type === 'login' ? 'دخول' : 'إنشاء الحساب'}</button>
-    <p onclick="openAuth('${type === 'login' ? 'register' : 'login'}')" style="color:#a78bfa;text-align:center;font-size:11px;cursor:pointer">
-      ${type === 'login' ? 'ما عندك حساب؟ إنشاء حساب' : 'عندك حساب؟ تسجيل الدخول'}
-    </p>
-  `;
-  $('#modal').classList.add('open');
-}
-
-function closeModal() {
-  $('#modal').classList.remove('open');
-}
-
-async function submitAuth(type) {
-  try {
-    const data = await api('/auth/' + (type === 'login' ? 'login' : 'register'), {
-      method: 'POST',
-      body: JSON.stringify({
-        username: $('#username').value,
-        password: $('#password').value
-      })
-    });
-
-    token = data.token;
-    me = data.user;
-    localStorage.setItem('token', token);
-    closeModal();
-    renderAuth();
-    toast('تم الدخول بنجاح');
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-function renderAuth() {
-  if (!me) {
-    $('#authNav').innerHTML = `
-      <button class="btn ghost" onclick="openAuth('login')">دخول</button>
-      <button class="btn" onclick="openAuth('register')">إنشاء حساب</button>
-    `;
-    $('#authSide').innerHTML = '';
-    return;
-  }
-
-  $('#authNav').innerHTML = `
-    <span class="liveDot">${esc(me.username)} · ${me.points} نقطة</span>
-    <button class="btn ghost" onclick="logout()">خروج</button>
-  `;
-
-  $('#authSide').innerHTML = `
-    <a class="supportSide" href="#" onclick="logout()">⇥ <span>تسجيل الخروج</span></a>
-  `;
-}
-
-function logout() {
-  token = null;
-  me = null;
-  localStorage.removeItem('token');
-  renderAuth();
-  location.reload();
-}
-
-function requireLogin(callback) {
-  if (!token) return openAuth('login');
-  callback();
-}
-
-const movies = [
-  ['مغامرة في المجهول', '#352766'],
-  ['ليلة المدينة', '#244d67'],
-  ['رحلة النجوم', '#63294e'],
-  ['The Last Game', '#344d39'],
-  ['عالم آخر', '#6b4224']
-];
-
-function renderMovies() {
-  const el = $('#movieList');
-  el.innerHTML = movies.map(([title, color], index) => `
-    <div class="movie" style="--movie:linear-gradient(135deg,${color},#101321)">
-      <b>${esc(title)}</b>
-      <small>${index % 2 ? 'مسلسل' : 'فيلم'} · 2026</small>
-      <button class="btn" style="margin-top:7px;padding:5px;font-size:10px" onclick="openCinema('${esc(title)}')">اختيار الفيلم</button>
-    </div>
-  `).join('');
-}
-
-function openCinema(movie = '') {
-  if (!token) return openAuth('login');
-
-  $('#modalBody').innerHTML = `
-    <h2>جلسة السينما</h2>
-    <p style="color:#8993ad;font-size:12px">${movie ? `الفيلم المختار: <b>${esc(movie)}</b>` : 'اختار المحتوى المصرح به'}</p>
-    <select id="cinemaRoom">
-      <option>الروم العام — متصل</option>
-      <option>غرفة الأصدقاء — متصل</option>
-      <option>الروم الهادئ — متصل</option>
-    </select>
-    <input id="cinemaSource" placeholder="رابط المصدر المصرح به" />
-    <button class="btn" style="width:100%;margin-top:10px" onclick="startCinema('${esc(movie || '')}')">دخول البوت للروم</button>
-  `;
-
-  $('#modal').classList.add('open');
-}
-
-async function startCinema(movie) {
-  try {
-    await api('/cinema/sessions', {
-      method: 'POST',
-      body: JSON.stringify({
-        movie: movie || 'فيلم مختار',
-        roomId: $('#cinemaRoom').value,
-        source: $('#cinemaSource').value
-      })
-    });
-
-    closeModal();
-    toast('تم إرسال طلب السينما للبوت');
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function startDownload() {
-  const url = $('#downloadUrl').value.trim();
-  if (!url) return toast('الصق الرابط أولاً');
-
-  try {
-    const result = await api('/control/downloads', {
-      method: 'POST',
-      body: JSON.stringify({
-        url,
-        quality: $('#downloadQuality').value
-      })
-    });
-    toast(result.message || 'تمت الإضافة للطلب');
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function createGame() {
-  const title = prompt('اسم اللعبة أو الجلسة', 'أونو');
-  if (!title) return;
-
-  try {
-    await api('/games', {
-      method: 'POST',
-      body: JSON.stringify({ title, min: 2, max: 4, visibility: 'public' })
-    });
-    toast('تم إنشاء الجلسة');
-    load();
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function createGroup() {
-  const name = prompt('اسم القروب');
-  if (!name) return;
-
-  const description = prompt('وصف القروب', 'قروب أصدقاء');
-
-  try {
-    await api('/groups', {
-      method: 'POST',
-      body: JSON.stringify({ name, description })
-    });
-    toast('تم إنشاء القروب');
-    load();
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function joinGroup(id) {
-  try {
-    await api('/groups/' + id + '/join', { method: 'POST' });
-    toast('تم إرسال طلبك للمالك');
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function joinGame(id) {
-  try {
-    await api('/games/' + id + '/join', { method: 'POST' });
-    toast('انضممت للجلسة');
-    load();
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-async function rate() {
-  const value = prompt('التقييم من 1 إلى 5', '5');
-  const text = prompt('اكتب رأيك', 'منصة رائعة');
-  if (!value) return;
-
-  try {
-    await api('/ratings', {
-      method: 'POST',
-      body: JSON.stringify({ value, text })
-    });
-    toast('شكراً لك');
-    load();
-  } catch (error) {
-    toast(error.message);
-  }
-}
-
-function renderMembers() {
-  const names = ['w4px', 'زاجل', 'M7MD', 'Layan', 'Faisal', 'Rakan', 'Sultan', 'Noura'];
-  $('#onlineCount').textContent = names.length;
-  $('#membersMetric').textContent = names.length;
-  $('#memberList').innerHTML = names.map((name) => `
-    <div class="member">
-      <span class="memberAvatar">${esc(name[0] || '•')}</span>
-      <b>${esc(name)}</b>
-      <i></i>
-    </div>
-  `).join('');
-}
-
-async function load() {
-  try {
-    if (token) {
-      const session = await api('/me');
-      me = session.user;
-      renderAuth();
-    } else {
-      me = null;
-      renderAuth();
-    }
-  } catch (error) {
-    token = null;
-    localStorage.removeItem('token');
-    me = null;
-    renderAuth();
-  }
-
-  try {
-    await api('/visit', { method: 'POST' });
-    const data = await api('/public');
-
-    $('#visits').textContent = data.visits;
-
-    $('#gamesList').innerHTML = data.games.length
-      ? data.games.map((game) => `
-          <div class="card">
-            <span class="eyebrow">${game.visibility === 'private' ? '🔒 خاص' : '● عام'}</span>
-            <h3>🎮 ${esc(game.title)}</h3>
-            <p>اللاعبون ${game.players.length}/${game.max} · الحد الأدنى ${game.min}</p>
-            <button class="btn" onclick="joinGame('${game.id}')">انضمام</button>
-          </div>
-        `).join('')
-      : '<div class="card"><h3>ابدأ أول جلسة</h3><p>كن أول من يفتح لعبة للمجتمع.</p></div>';
-
-    $('#groupsList').innerHTML = data.groups.length
-      ? data.groups.map((group) => `
-          <div class="card">
-            <span class="eyebrow">👥 ${group.members.length} أعضاء</span>
-            <h3>${esc(group.name)}</h3>
-            <p>${esc(group.description || 'قروب جديد')}</p>
-            <p>${group.members.map((member) => esc(member)).join(' · ') || 'لا يوجد أعضاء بعد'}</p>
-            <button class="btn" onclick="joinGroup('${group.id}')">طلب انضمام</button>
-          </div>
-        `).join('')
-      : '<div class="card"><h3>لا توجد قروبات بعد</h3><p>أنشئ أول قروب للمجتمع.</p></div>';
-
-    $('#ratings').innerHTML = data.ratings.length
-      ? data.ratings.slice(0, 4).map((rating) => `<p>★★★★★<br>${esc(rating.text || 'تجربة رائعة')}</p>`).join('')
-      : '<p>كن أول من يقيّم المنصة</p>';
-
-    $('#sessionsMetric').textContent = data.games.length;
-  } catch (error) {
-    toast(error.message);
-  }
-
-  renderMovies();
-  renderMembers();
-}
-
-document.querySelector('.mobileMenu')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
-
-load();
+app.post('/api/auth/register', (req, res) => { const username = String(req.body.username || '').trim(); const password = String(req.body.password || ''); if (!/^[\w\u0600-\u06ff-]{3,24}$/u.test(username) || password.length < 6) return res.status(400).json({ error: 'اليوزر 3-24 حرفاً والرمز 6 أحرف على الأقل' }); if (db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) return res.status(409).json({ error: 'اسم المستخدم مستخدم' }); const user = { id: id(), username, password: bcrypt.hashSync(password, 10), role: 'user', points: 0, createdAt: now() }; db.users.push(user); save(); log('register', user.id); res.json({ token: jwt.sign({ id: user.id, username: user.username, role: user.role }, secret), user: safeUser(user) }); });
+app.post('/api/auth/login', (req, res) => { const username = String(req.body.username || '').trim(); const password = String(req.body.password || ''); const user = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase()); if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'ب��انات الدخول غير صحيحة' }); log('login', user.id); res.json({ token: jwt.sign({ id: user.id, username: user.username, role: user.role }, secret), user: safeUser(user) }); });
+app.get('/api/me', auth, (req, res) => { const user = db.users.find((u) => u.id === req.user.id); if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' }); res.json({ user: safeUser(user) }); });
+app.post('/api/visit', (req, res) => { db.stats.visits += 1; save(); res.json({ visits: db.stats.visits }); });
+app.get('/api/public', (req, res) => res.json({ visits: db.stats.visits, ratings: db.ratings.slice(0, 12), groups: db.groups.filter((g) => g.status === 'open').map((g) => ({ ...g, members: g.memberIds.map((uid) => db.users.find((u) => u.id === uid)?.username).filter(Boolean) })), games: db.games.filter((g) => g.status === 'waiting'), cinemaCatalog: db.cinemaCatalog, onlineMembers: ['w4px', 'زاجل', 'M7MD', 'Layan', 'Faisal', 'Rakan', 'Sultan', 'Noura'] }));
+app.post('/api/ratings', auth, (req, res) => { const value = Number(req.body.value); if (!Number.isInteger(value) || value < 1 || value > 5) return res.status(400).json({ error: 'تقييم غير صالح' }); db.ratings.unshift({ id: id(), user: req.user.username, value, text: String(req.body.text || '').slice(0, 300), at: now() }); save(); log('rating', req.user.id, { value }); res.json({ ok: true }); });
+app.post('/api/groups', auth, (req, res) => { const name = String(req.body.name || '').trim(); if (name.length < 2) return res.status(400).json({ error: 'اكتب اسم القروب' }); const group = { id: id(), name, description: String(req.body.description || '').slice(0, 200), ownerId: req.user.id, memberIds: [req.user.id], requests: [], status: 'open', createdAt: now() }; db.groups.push(group); save(); log('group.create', req.user.id, { group: group.id }); res.json(group); });
+app.post('/api/groups/:id/join', auth, (req, res) => { const group = db.groups.find((g) => g.id === req.params.id); if (!group) return res.status(404).json({ error: 'القروب غير موجود' }); if (db.groups.some((g) => g.memberIds.includes(req.user.id))) return res.status(400).json({ error: 'لا يمكنك دخول أكثر من قروب' }); if (!group.requests.includes(req.user.id)) group.requests.push(req.user.id); save(); log('group.request', req.user.id, { group: group.id }); res.json({ ok: true, message: 'تم إرسال الطلب للمالك' }); });
+app.post('/api/groups/:id/decision', auth, (req, res) => { const group = db.groups.find((g) => g.id === req.params.id); if (!group || group.ownerId !== req.user.id) return res.status(403).json({ error: 'أنت لست مالك القروب' }); const userId = String(req.body.userId || ''); const accept = Boolean(req.body.accept); group.requests = group.requests.filter((uid) => uid !== userId); if (accept && !group.memberIds.includes(userId)) group.memberIds.push(userId); save(); log('group.decision', req.user.id, { group: group.id, userId, accept }); res.json(group); });
+app.post('/api/groups/:id/leave', auth, (req, res) => { const group = db.groups.find((g) => g.id === req.params.id); if (!group) return res.status(404).json({ error: 'القروب غير موجود' }); group.memberIds = group.memberIds.filter((uid) => uid !== req.user.id); save(); log('group.leave', req.user.id, { group: group.id }); res.json({ ok: true }); });
+app.post('/api/games', auth, (req, res) => { const title = String(req.body.title || 'جلسة جديدة').trim(); const min = Math.max(1, Number(req.body.min || 2)); const max = Math.max(min, Number(req.body.max || 4)); const game = { id: id(), title, min, max, hostId: req.user.id, players: [req.user.id], visibility: req.body.visibility === 'private' ? 'private' : 'public', status: 'waiting', createdAt: now() }; db.games.unshift(game); save(); log('game.create', req.user.id, { game: game.id }); res.json(game); });
+app.post('/api/games/:id/join', auth, (req, res) => { const game = db.games.find((g) => g.id === req.params.id); if (!game || game.status !== 'waiting') return res.status(404).json({ error: 'الجلسة غير متاحة' }); if (game.players.length >= game.max) return res.status(400).json({ error: 'الجلسة ممتلئة' }); if (!game.players.includes(req.user.id)) game.players.push(req.user.id); save(); res.json(game); });
+app.post('/api/cinema/sessions', auth, (req, res) => { const source = String(req.body.source || '').trim(); if (!source) return res.status(400).json({ error: 'أدخل رابط مصدر مصرح به' }); const session = { id: id(), movie: String(req.body.movie || 'فيلم مختار'), roomId: String(req.body.roomId || 'الروم العام'), source, hostId: req.user.id, status: 'requested', createdAt: now() }; db.cinemaSessions.push(session); save(); log('cinema.request', req.user.id, { session: session.id, room: session.roomId }); res.json({ ok: true, status: 'requested', message: 'تم تسجيل الطلب وسيصل لخدمة بوت السينما' }); });
+app.post('/api/control/downloads', auth, (req, res) => { const url = String(req.body.url || '').trim(); if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'الرابط غير صالح' }); const job = { id: id(), url, quality: String(req.body.quality || 'best'), userId: req.user.id, status: 'queued', createdAt: now() }; db.downloads.unshift(job); save(); log('download.request', req.user.id, { job: job.id }); res.json({ ok: true, message: 'تم تحليل الرابط وإضافته للطابور. اربط خدمة التحميل المصرح بها لإنتاج الملف.' }); });
+app.get('/api/admin/logs', auth, (req, res) => { if (req.user.role !== 'admin') return res.status(403).json({ error: 'ممنوع' }); res.json(db.logs); });
+app.get('/api/admin/users', auth, (req, res) => { if (req.user.role !== 'admin') return res.status(403).json({ error: 'ممنوع' }); res.json(db.users.map(safeUser)); });
+app.get('/api/health', (req, res) => res.json({ ok: true, at: now() }));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Platform running on :${port}`));
