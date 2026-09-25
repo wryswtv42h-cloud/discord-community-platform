@@ -1,0 +1,7 @@
+{
+  "name": "discord-community-platform",
+  "version": 1,
+  "framework": "node",
+  "build": { "builder": "NIXPACKS", "buildCommand": "npm install" },
+  "deploy": { "startCommand": "npm start", "healthcheckPath": "/api/health", "restartPolicyType": "ON_FAILURE" }
+}
