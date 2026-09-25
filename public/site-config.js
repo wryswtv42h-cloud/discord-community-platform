@@ -15,5 +15,10 @@ window.SITE_CONFIG = {
 
 const theme = document.createElement('link');
 theme.rel = 'stylesheet';
-theme.href = '/mld-theme.css?v=10';
+theme.href = `/mld-theme.css?v=${Date.now()}`;
 document.head.appendChild(theme);
+
+const featureTheme = document.createElement('link');
+featureTheme.rel = 'stylesheet';
+featureTheme.href = `/platform-features.css?v=${Date.now()}`;
+document.head.appendChild(featureTheme);
