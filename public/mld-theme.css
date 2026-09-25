@@ -1,0 +1,50 @@
+/* MLD / ملاذ visual override: charcoal, silver, pearl and dusty-pink palette */
+:root {
+  --bg: #0c0d11;
+  --bg-2: #18191f;
+  --side: #101116;
+  --panel: rgba(24, 25, 31, 0.96);
+  --card: rgba(30, 30, 37, 0.92);
+  --line: rgba(239, 229, 234, 0.13);
+  --text: #f8f7f8;
+  --muted: #aaa6ad;
+  --silver: #f0eef0;
+  --pearl: #ead9df;
+  --lav: #c9bdc6;
+  --soft: #f2e6ea;
+  --pink: #d5b6c0;
+  --purple: #b8a6b5;
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% -5%, rgba(225, 207, 216, 0.16), transparent 25%),
+    radial-gradient(circle at 95% 15%, rgba(198, 181, 191, 0.12), transparent 24%),
+    linear-gradient(135deg, #0a0b0f 0%, #191a20 48%, #0d0e13 100%);
+}
+
+.heroShell {
+  background:
+    linear-gradient(180deg, rgba(8, 9, 12, 0.26), rgba(8, 9, 12, 0.72)),
+    url('/server-banner.svg') center/cover no-repeat !important;
+}
+
+.heroContent h1 {
+  background: linear-gradient(110deg, #ffffff 10%, #ded6da 48%, #d0b7c0 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brandMark,
+.btn:not(.ghost),
+.memberAvatar {
+  background: linear-gradient(135deg, #ffffff, #ded9de 43%, #d6b9c4 100%);
+}
+
+.btn:not(.ghost) { color: #1a171c; }
+
+.btn:not(.ghost):hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
