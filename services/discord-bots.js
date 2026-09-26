@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 
 const definitions = [
-  ['groups', 'GROUPS_BOT_TOKEN'],
+  ['groups', process.env.GROUPS_BOT_TOKEN ? 'GROUPS_BOT_TOKEN' : 'DISCORD_BOT_TOKEN'],
   ['tickets', 'TICKETS_BOT_TOKEN'],
   ['applications', 'APPLICATIONS_BOT_TOKEN'],
   ['privateMessages', 'PRIVATE_MESSAGES_BOT_TOKEN']
