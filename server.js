@@ -23,6 +23,8 @@ const defaults = {
   tickets: [],
   privateMessages: [],
   anonymousMessages: [],
+  notifications: [],
+  anonymousMessages: [],
   cinemaRequests: [],
   downloadRequests: [],
   cinemaCatalog: [],
@@ -65,12 +67,13 @@ app.use(express.static(path.join(root, 'public')));
 
 function safeUser(user) {
   if (!user) return null;
-
   return {
     id: user.id,
     username: user.username,
     points: user.points || 0,
     role: user.role || 'user',
+    avatar: user.avatar || user.avatarUrl || '/server-avatar.svg',
+    discordId: user.discordId || null,
     createdAt: user.createdAt
   };
 }
@@ -433,17 +436,25 @@ app.post('/api/visit', (req, res) => {
 
 app.get('/api/public', async (req, res) => {
   const publicGroups = db.groups.filter((group) => group.status === 'open').map(getPublicGroup);
-  const publicGames = db.games.filter((game) => game.status === 'waiting' || game.status === 'full').map(getPublicGame);
+  const publicGames = db.games.filter((game) => ['waiting','full','playing'].includes(game.status)).map(getPublicGame);
   let members = [];
   try { members = await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch (error) { console.error('Discord members:', error.message); }
-  if (!members.length) members = db.users.map((user) => ({ id:user.id,name:user.username,username:user.username,avatar:null,status:'offline',role:user.role }));
-  res.json({ visits:db.stats.visits, onlineMembers:members.slice(0,100), groups:publicGroups, games:publicGames, ratings:db.ratings.slice(0,12) });
+  if (!members.length) members = db.users.map((user) => ({ id:user.id,name:user.username,username:user.username,avatar:user.avatar||'/server-avatar.svg',status:'online',role:user.role }));
+  res.json({
+    visits: db.stats.visits,
+    onlineMembers: members.slice(0,100),
+    members: members.slice(0,100),
+    groups: publicGroups,
+    games: publicGames,
+    ratings: db.ratings.slice(0,12),
+    leaderboard: db.users.filter(u=>u.role!=='system').sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,20).map(safeUser)
+  });
 });
 app.get('/api/public/members', async (req,res)=>{
   const q=String(req.query.q||'').trim().toLowerCase();
   let members=[];
-  try { members=await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch (error) { console.error('Discord member search:',error.message); }
-  if(!members.length) members=db.users.map((user)=>({id:user.id,name:user.username,username:user.username,avatar:null,status:'offline',role:user.role}));
+  try { members=await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch {}
+  if (!members.length) members=db.users.map(u=>({id:u.id,name:u.username,username:u.username,avatar:u.avatar||'/server-avatar.svg',status:'online'}));
   if(q) members=members.filter(m=>[m.name,m.username,m.id].filter(Boolean).join(' ').toLowerCase().includes(q));
   res.json({members:members.slice(0,50)});
 });
@@ -529,8 +540,9 @@ app.post('/api/groups/:id/join', auth, (req, res) => {
  */
 app.post('/api/games', auth, (req, res) => {
   const title = String(req.body.title || '').trim();
-  const min = Math.max(1, Number(req.body.min || 2));
-  const max = Math.max(min, Number(req.body.max || 4));
+  const type = ['uno','ludo','baloot','qawsar','custom'].includes(req.body.type) ? req.body.type : 'custom';
+  const min = Math.max(1, Math.min(16, Number(req.body.min || 2)));
+  const max = Math.max(min, Math.min(16, Number(req.body.max || 4)));
   const visibility = req.body.visibility === 'private' ? 'private' : 'public';
 
   if (!title || title.length > 100) {
@@ -542,9 +554,11 @@ app.post('/api/games', auth, (req, res) => {
   const game = {
     id: id(),
     title,
+    type,
     min,
     max,
     visibility,
+    state: { phase:'lobby', turn:null, moves:[] },
     playerIds: [req.user.id],
     status: 'waiting',
     createdBy: req.user.id,
@@ -862,8 +876,13 @@ app.post('/api/private-messages', auth, (req,res)=>{
   const recipientId=String(req.body.recipientId||'').trim(), message=String(req.body.message||'').trim(), title=String(req.body.title||'رسالة خاصة').trim();
   if(!recipientId||!message)return res.status(400).json({error:'حدد المستلم واكتب الرسالة'});
   if(recipientId===req.user.id)return res.status(400).json({error:'لا يمكنك مراسلة نفسك'});
-  const item={id:id(),recipientId,senderId:req.user.id,title:title.slice(0,120),message:message.slice(0,4000),createdAt:now(),readAt:null};
-  db.privateMessages.unshift(item);db.privateMessages=db.privateMessages.slice(0,5000);save();audit('private_message_sent',req.user.id,{messageId:item.id,recipientId});
+  const recipient=getUser(recipientId);
+  if(!recipient) return res.status(404).json({error:'المستلم غير موجود'});
+  const item={id:id(),recipientId,senderId:req.user.id,senderUsername:req.user.username,recipientUsername:recipient.username,title:title.slice(0,120),message:message.slice(0,4000),createdAt:now(),readAt:null};
+  db.privateMessages.unshift(item); db.privateMessages=db.privateMessages.slice(0,5000);
+  if(!Array.isArray(db.notifications)) db.notifications=[];
+  db.notifications.unshift({id:id(),userId:recipientId,type:'private',messageId:item.id,read:false,createdAt:now()});
+  db.notifications=db.notifications.slice(0,5000); save();audit('private_message_sent',req.user.id,{messageId:item.id,recipientId});
   res.status(201).json({id:item.id,title:item.title,createdAt:item.createdAt});
 });
 app.get('/api/private-messages',auth,(req,res)=>res.json(db.privateMessages.filter(m=>m.senderId===req.user.id||m.recipientId===req.user.id).slice(0,200)));
@@ -873,10 +892,21 @@ app.post('/api/anonymous-messages',optionalAuth,(req,res)=>{
   if(!message||message.length>4000)return res.status(400).json({error:'اكتب الرسالة بشكل صحيح'});
   if(!recipientId&&!recipientName)return res.status(400).json({error:'حدد المستلم'});
   const item={id:id(),recipientId:recipientId||null,recipientName:recipientName.slice(0,120),message:message.slice(0,4000),senderId:req.user?.id||null,senderUsername:req.user?.username||null,createdAt:now(),readAt:null,status:'sent'};
-  db.anonymousMessages.unshift(item);db.anonymousMessages=db.anonymousMessages.slice(0,5000);save();audit('anonymous_message_sent',req.user?.id||null,{messageId:item.id,recipientId:item.recipientId});
+  if(!Array.isArray(db.anonymousMessages)) db.anonymousMessages=[];
+  db.anonymousMessages.unshift(item); db.anonymousMessages=db.anonymousMessages.slice(0,5000);
+  if(item.recipientId){ if(!Array.isArray(db.notifications)) db.notifications=[]; db.notifications.unshift({id:id(),userId:item.recipientId,type:'anonymous',messageId:item.id,read:false,createdAt:now()}); }
+  db.notifications=db.notifications.slice(0,5000); save();audit('anonymous_message_sent',req.user?.id||null,{messageId:item.id,recipientId:item.recipientId});
   res.status(201).json({id:item.id,createdAt:item.createdAt});
 });
 app.get('/api/anonymous-messages',auth,(req,res)=>res.json(db.anonymousMessages.filter(m=>m.recipientId===req.user.id||(m.recipientName&&m.recipientName.toLowerCase()===req.user.username.toLowerCase())).map(m=>({id:m.id,recipientName:m.recipientName,message:m.message,createdAt:m.createdAt,readAt:m.readAt})).slice(0,200)));
+app.get('/api/notifications',auth,(req,res)=>{
+  const items=(db.notifications||[]).filter(n=>n.userId===req.user.id).slice(0,100);
+  res.json({items,unread:items.filter(n=>!n.read).length});
+});
+app.post('/api/notifications/read-all',auth,(req,res)=>{
+  for(const n of (db.notifications||[])) if(n.userId===req.user.id) n.read=true;
+  save(); res.json({ok:true});
+});
 app.get('/api/owner/private-messages',auth,allow('owner'),(req,res)=>res.json(db.privateMessages));
 app.get('/api/owner/anonymous-messages',auth,allow('owner'),(req,res)=>res.json(db.anonymousMessages));
 app.get('/api/owner/logs',auth,allow('owner'),(req,res)=>res.json(db.logs));
@@ -951,6 +981,12 @@ app.delete(
   }
 );
 
+app.get('/api/admin/users',auth,allow('owner','admin'),(req,res)=>res.json({users:db.users.filter(u=>u.role!=='system').map(safeUser)}));
+app.get('/api/admin/stats',auth,allow('owner','admin'),(req,res)=>res.json({
+  users:db.users.length,groups:db.groups.length,games:db.games.length,ratings:db.ratings.length,
+  tickets:db.tickets.length,applications:db.applications.length,privateMessages:db.privateMessages.length,
+  anonymousMessages:(db.anonymousMessages||[]).length,visits:db.stats.visits
+}));
 app.get(
   '/api/admin/logs',
   auth,
