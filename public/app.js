@@ -106,6 +106,8 @@ function renderAuth() {
       <button class="btn" type="button" data-auth="register">إنشاء حساب</button>
     `;
     $('#sidebarAuthLink').innerHTML = '<span>🔐</span><span>تسجيل الدخول</span>';
+    $('#adminNavLink')?.setAttribute('hidden','');
+    $('#drawerAdminLink')?.setAttribute('hidden','');
     return;
   }
 
@@ -154,9 +156,7 @@ function openAuth(mode = 'login') {
       localStorage.setItem('token', result.token);
       renderAuth();
       closeModal();
-      if (window.location.hash === '#games' || window.location.hash === '#groups') {
-        loadPublicData();
-      }
+      loadPublicData();
       showToast('تم تسجيل الدخول بنجاح');
     } catch (error) {
       showToast(error.message);
