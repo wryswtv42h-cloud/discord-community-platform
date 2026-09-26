@@ -248,6 +248,27 @@ function renderGames(games = []) {
   $('[data-game-move]').forEach(b=>b.onclick=async()=>{const move=prompt('اكتب الحركة');if(!move)return;try{await api('/games/'+b.dataset.gameMove+'/move',{method:'POST',body:{move}});loadPublicData()}catch(e){showToast(e.message)}});
 }
 
+async function sendPrivateMessage(){
+  if(!state.token)return openAuth('login');
+  const recipient=$('#privateRecipient')?.value.trim(), message=$('#privateText')?.value.trim();
+  if(!recipient||!message)return showToast('اكتب المستلم والرسالة');
+  try{await api('/private-messages',{method:'POST',body:{recipientId:recipient,title:'رسالة من ملاذ',message}});$('#privateText').value='';showToast('تم إرسال الرسالة');loadPrivateMessages()}catch(e){showToast(e.message)}
+}
+async function sendAnonymousMessage(){
+  if(!state.token)return openAuth('login');
+  const recipient=$('#anonymousRecipient')?.value.trim(), message=$('#anonymousText')?.value.trim();
+  if(!recipient||!message)return showToast('اكتب المستلم والرسالة');
+  try{await api('/anonymous-messages',{method:'POST',body:{recipientId:recipient,message}});$('#anonymousText').value='';showToast('تم إرسال الرسالة المجهولة');}catch(e){showToast(e.message)}
+}
+async function loadPrivateMessages(){
+  if(!state.token)return;
+  try{
+    const d=await api('/private-messages');
+    const items=d.items||d.messages||d||[];
+    const el=$('#privateMessagesList'); if(!el)return;
+    el.innerHTML=items.length?items.slice(0,50).map(x=>'<div class="ratingCard"><b>'+escapeHtml(x.senderUsername||x.senderId||'مستخدم')+'</b><p>'+escapeHtml(x.message)+'</p><small>'+escapeHtml(x.createdAt||'')+'</small></div>').join(''):'<div class="emptyState">لا توجد رسائل</div>';
+  }catch{}
+}
 function renderRatings(ratings = []) {
   const list = $('#ratingsList');
   if (!list) return;
@@ -495,3 +516,6 @@ async function init() {
 }
 
 init();
+
+
+document.addEventListener('DOMContentLoaded',()=>{ $('#sendPrivateBtn')?.addEventListener('click',sendPrivateMessage); $('#sendAnonymousBtn')?.addEventListener('click',sendAnonymousMessage); loadPrivateMessages(); });
