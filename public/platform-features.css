@@ -159,3 +159,8 @@
 #ratings .ratingTrack:hover{animation-play-state:paused}
 #ratings .ratingTrack .ratingCard{width:min(310px,78vw);flex:0 0 auto}
 @keyframes mldRatingsMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+.platformDrawer .drawerMenuGroup{margin:10px 0 14px;padding:10px;border:1px solid rgba(241,205,233,.14);border-radius:14px;background:rgba(255,255,255,.025)}
+.platformDrawer .drawerMenuGroup>b{display:block;color:var(--soft);font-size:11px;margin:0 4px 7px}
+.platformDrawer .drawerMenuGroup a{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:12px}
+.platformDrawer .drawerMenuGroup a:hover{background:rgba(169,89,180,.18);color:#fff}
