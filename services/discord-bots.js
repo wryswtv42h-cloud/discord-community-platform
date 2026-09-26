@@ -51,8 +51,18 @@ for (const [name, envName] of definitions) {
   clients.set(name, client);
 }
 
+async function sendDM(userId, content) {
+  const client = clients.get('privateMessages') || clients.get('groups');
+  if (!client || !client.isReady()) throw new Error('Discord bot غير متصل');
+  const user = await client.users.fetch(String(userId));
+  const dm = await user.createDM();
+  await dm.send(content);
+  return true;
+}
+
 globalThis.mldDiscord = {
   guildId: process.env.DISCORD_GUILD_ID || '',
   clients,
-  getMembers
+  getMembers,
+  sendDM
 };
