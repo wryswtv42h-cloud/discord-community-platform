@@ -1,307 +1,38 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0b0612">
-  <title>ملاذ | MLD Community</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/mld-theme.css">
-  <link rel="stylesheet" href="/platform-features.css">
-
-  <script src="/site-config.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0612"><title>ملاذ | MLD Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/mld-theme.css"><link rel="stylesheet" href="/platform-features.css">
+<script src="/site-config.js"></script>
 </head>
-
 <body>
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="brandMark">MLD</div>
-      <div>
-        <strong>ملاذ</strong>
-        <small>COMMUNITY HUB</small>
-      </div>
-    </div>
-
-    <div class="serverCard">
-      <div class="serverAvatar">
-        <img id="serverAvatar" alt="ملاذ">
-      </div>
-
-      <div class="serverText">
-        <b>ملاذ</b>
-        <small>COMMUNITY INTELLIGENCE</small>
-      </div>
-
-      <span class="onlinePulse">●</span>
-    </div>
-
-    <nav>
-      <a href="#home" class="active">🏠 <span>الرئيسية</span></a>
-      <a href="#members">👥 <span>الأعضاء</span></a>
-      <a href="#groups">💬 <span>القروبات</span></a>
-      <a href="#games">🎮 <span>الألعاب</span></a>
-      <a href="#cinema">🎬 <span>السينما</span></a>
-      <a href="#downloads">⬇️ <span>التحميل</span></a>
-      <a href="#leaderboard">🏆 <span>التوب</span></a>
-      <a href="#ratings">⭐ <span>التقييمات</span></a><a href="#messages">✉️ <span>الرسائل</span></a><a href="#anonymous">🕵️ <span>مجهولة</span></a>
-    </nav>
-
-    <div class="sideBottom">
-      <a href="#" class="supportSide" id="sidebarAuthLink">
-        🔐 <span>تسجيل الدخول</span>
-      </a>
-    </div>
-  </aside>
-
-  <main class="main" id="main">
-    <header>
-      <div class="breadcrumb">
-        <span>ملاذ</span>
-        <span>›</span>
-        <b>الرئيسية</b>
-      </div>
-
-      <div class="headerActions">
-        <span class="liveDot">● مباشر</span>
-
-        <button
-          class="iconBtn"
-          id="platformMenuBtn"
-          type="button"
-          aria-label="فتح القائمة"
-          aria-expanded="false"
-        >
-          ☰
-        </button>
-
-        <div id="authNav" class="authNav"></div>
-      </div>
-    </header>
-
-    <div class="page">
-      <section id="home" class="heroWrap">
-        <div class="heroShell">
-          <div class="heroContent">
-            <div class="heroBadge">LIVE COMMUNITY SYSTEM ●</div>
-
-            <h1 id="serverName">ملاذ</h1>
-
-            <p id="serverWelcome">
-              حياكم الله في ملاذ — مساحة راقية لمجتمع MLD للعب والتجمع والاستمتاع.
-            </p>
-
-            <div class="heroMeta">
-              <span id="heroOwner">المنشئ: فهد المطيري</span>
-              <span id="heroOnline">● 0 أعضاء متصلين</span>
-              <span id="heroVisits">◈ 0 زيارة</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="statsStrip">
-        <div class="statCard">
-          <span>الأعضاء</span>
-          <strong id="memberCount">0</strong>
-        </div>
-
-        <div class="statCard">
-          <span>الزيارات</span>
-          <strong id="visitCount">0</strong>
-        </div>
-
-        <div class="statCard">
-          <span>الألعاب</span>
-          <strong id="gamesCount">0</strong>
-        </div>
-
-        <div class="statCard">
-          <span>القروبات</span>
-          <strong id="groupsCount">0</strong>
-        </div>
-      </section>
-
-      <section class="panelSection" id="members">
-        <div class="sectionTitle">
-          <h2>الأعضاء المتصلين</h2>
-          <button class="btn ghost" id="createGroupBtn" type="button">
-            إنشاء قروب
-          </button>
-        </div>
-
-        <div class="searchWrap">
-          <input
-            id="memberSearchInput"
-            type="search"
-            placeholder="ابحث عن عضو..."
-          >
-
-          <button class="btn" id="searchMemberBtn" type="button">
-            بحث
-          </button>
-        </div>
-
-        <div class="memberGrid" id="memberList">
-          <div class="emptyState">جاري تحميل الأعضاء...</div>
-        </div>
-      </section>
-
-      <section class="panelSection" id="groups">
-        <div class="sectionTitle">
-          <h2>القروبات</h2>
-
-          <button class="btn" id="newGroupBtn" type="button">
-            + قروب جديد
-          </button>
-        </div>
-
-        <div class="cardGrid" id="groupsList">
-          <div class="emptyState">جاري تحميل القروبات...</div>
-        </div>
-      </section>
-
-      <section class="panelSection" id="games">
-        <div class="sectionTitle">
-          <h2>الألعاب</h2>
-
-          <button class="btn" id="newGameBtn" type="button">
-            + جلسة جديدة
-          </button>
-        </div>
-
-        <div class="cardGrid" id="gamesList">
-          <div class="emptyState">جاري تحميل الألعاب...</div>
-        </div>
-      </section>
-
-      <section class="panelSection" id="cinema">
-        <div class="sectionTitle">
-          <h2>🎬 السينما</h2>
-
-          <button class="btn" id="cinemaOpen" type="button">
-            فتح السينما
-          </button>
-        </div>
-
-        <p class="featureHint">
-          اختر محتوى متاحًا بشكل قانوني، ثم حدد روم الصوت.
-        </p>
-
-        <div class="cardGrid" id="cinemaCatalog">
-          <div class="emptyState">
-            اضغط فتح السينما لعرض القائمة
-          </div>
-        </div>
-      </section>
-
-      <section class="panelSection" id="downloads">
-        <div class="sectionTitle">
-          <h2>⬇️ تحميل الوسائط</h2>
-        </div>
-
-        <form class="mediaForm" id="downloadForm">
-          <input
-            id="mediaUrl"
-            type="url"
-            placeholder="رابط مباشر لملف تملك حق تنزيله"
-            required
-          >
-
-          <select id="mediaFormat">
-            <option value="video">فيديو</option>
-            <option value="audio">صوت</option>
-          </select>
-
-          <button class="btn" type="submit">
-            إضافة مهمة
-          </button>
-
-          <small>
-            يسمح فقط بالمحتوى الذي تملك حق تنزيله.
-          </small>
-        </form>
-
-        <div id="downloadStatus" class="emptyState">
-          لا توجد مهام تحميل
-        </div>
-      </section>
-
-      <section class="panelSection" id="messages">
-        <div class="sectionTitle"><h2>✉️ الرسائل الخاصة</h2></div>
-        <div class="cardGrid">
-          <div class="infoCard"><h3>إرسال رسالة</h3><input id="privateRecipient" placeholder="اسم المستلم"><textarea id="privateText" placeholder="اكتب الرسالة..." style="width:100%;min-height:110px"></textarea><button class="btn" id="sendPrivateBtn" type="button">إرسال</button></div>
-          <div class="infoCard"><h3>الرسائل</h3><div id="privateMessagesList" class="ratingList"><div class="emptyState">سجل الدخول لعرض الرسائل</div></div></div>
-        </div>
-      </section>
-      <section class="panelSection" id="anonymous">
-        <div class="sectionTitle"><h2>🕵️ رسائل مجهولة</h2></div>
-        <div class="cardGrid">
-          <div class="infoCard"><h3>إرسال مجهول</h3><input id="anonymousRecipient" placeholder="اسم المستلم"><textarea id="anonymousText" placeholder="اكتب الرسالة..." style="width:100%;min-height:110px"></textarea><button class="btn" id="sendAnonymousBtn" type="button">إرسال مجهول</button></div>
-          <div class="infoCard"><h3>الوارد</h3><div id="anonymousInbox" class="ratingList"><div class="emptyState">سجل الدخول لعرض الرسائل</div></div></div>
-        </div>
-      </section>
-
-      <section class="panelSection" id="leaderboard">
-        <div class="sectionTitle">
-          <h2>توب الألعاب</h2>
-        </div>
-
-        <div class="leaderboard" id="leaderboardList"></div>
-      </section>
-
-      <section class="panelSection" id="ratings">
-        <div class="sectionTitle">
-          <h2>التقييمات</h2>
-
-          <button class="btn" id="addRatingBtn" type="button">
-            تقييم الآن
-          </button>
-        </div>
-
-        <div class="ratingList" id="ratingsList"></div>
-      </section>
-    </div>
-  </main>
-
-  <div class="platformDrawer" id="platformDrawer" aria-hidden="true">
-    <div class="drawerHead">
-      <strong>MLD ملاذ</strong>
-
-      <button
-        class="iconBtn"
-        id="closePlatformMenu"
-        type="button"
-        aria-label="إغلاق القائمة"
-      >
-        ×
-      </button>
-    </div>
-
-    <a href="#home">🏠 الرئيسية</a>
-    <a href="#members">👥 الأعضاء</a>
-    <a href="#groups">💬 القروبات</a>
-    <a href="#games">🎮 الألعاب</a>
-    <a href="#cinema">🎬 السينما</a>
-    <a href="#downloads">⬇️ التحميل</a>
-    <a href="#leaderboard">🏆 التوب</a>
-    <a href="#ratings">⭐ التقييمات</a>
-    <a href="/admin">⚙️ لوحة الإدارة</a>
-  </div>
-
-  <div class="modal" id="authModal" aria-hidden="true">
-    <div class="modalCard">
-      <button class="modalClose" id="closeModalBtn" type="button">×</button>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <script src="/app.js"></script><script src="/messages.js"></script>
-  <script src="/member-picker.js"></script>
-  <script src="/platform-features.js"></script>
-</body>
-</html>
+<aside class="sidebar" id="sidebar">
+ <div class="brand"><div class="brandMark">MLD</div><div><strong>ملاذ</strong><small>COMMUNITY HUB</small></div></div>
+ <div class="serverCard"><div class="serverAvatar"><img id="serverAvatar" alt="ملاذ"></div><div class="serverText"><b>ملاذ</b><small>COMMUNITY INTELLIGENCE</small></div><span class="onlinePulse">●</span></div>
+ <nav>
+  <a href="#home" class="active">🏠 <span>الرئيسية</span></a><a href="#members">👥 <span>الأعضاء</span></a><a href="#groups">💬 <span>القروبات</span></a><a href="#games">🎮 <span>الألعاب</span></a><a href="#cinema">🎬 <span>السينما</span></a><a href="#downloads">⬇️ <span>التحميل</span></a><a href="#leaderboard">🏆 <span>التوب</span></a><a href="#ratings">⭐ <span>التقييمات</span></a><a href="#messages">💌 <span>الرسائل</span></a><a href="#anonymous">🕵️ <span>المجهولة</span></a><a href="/admin" id="adminNavLink" hidden>🛡️ <span>الإدارة</span></a>
+ </nav>
+ <div class="sideBottom"><a href="#" class="supportSide" id="sidebarAuthLink">🔐 <span>تسجيل الدخول</span></a></div>
+</aside>
+<main class="main" id="main">
+<header><div class="breadcrumb"><span>ملاذ</span><span>›</span><b>الرئيسية</b></div><div class="headerActions"><span class="liveDot">● مباشر</span><button class="iconBtn" id="platformMenuBtn" type="button">☰</button><div id="authNav" class="authNav"></div></div></header>
+<div class="page">
+<section id="home" class="heroWrap"><div class="heroShell"><div class="heroContent"><div class="heroBadge">LIVE COMMUNITY SYSTEM ●</div><h1 id="serverName">ملاذ</h1><p id="serverWelcome">حياكم الله في ملاذ — مجتمعكم الآمن للعب والتجمع والاستمتاع.</p><div class="heroMeta"><span id="heroOwner">المنشئ: فهد المطيري</span><span id="heroOnline">● 0 أعضاء متصلين</span><span id="heroVisits">◈ 0 زيارة</span></div></div></div></section>
+<section class="statsStrip"><div class="statCard"><span>الأعضاء</span><strong id="memberCount">0</strong></div><div class="statCard"><span>الزيارات</span><strong id="visitCount">0</strong></div><div class="statCard"><span>الجلسات</span><strong id="gamesCount">0</strong></div><div class="statCard"><span>القروبات</span><strong id="groupsCount">0</strong></div></section>
+<section class="panelSection" id="members"><div class="sectionTitle"><h2>الأعضاء</h2><button class="btn ghost" id="createGroupBtn" type="button">إنشاء قروب</button></div><div class="searchWrap"><input id="memberSearchInput" type="search" placeholder="ابحث عن عضو..."><button class="btn" id="searchMemberBtn" type="button">بحث</button></div><div class="memberGrid" id="memberList"><div class="emptyState">جاري تحميل الأعضاء...</div></div></section>
+<section class="panelSection" id="groups"><div class="sectionTitle"><h2>القروبات</h2><button class="btn" id="newGroupBtn" type="button">+ قروب جديد</button></div><div class="cardGrid" id="groupsList"><div class="emptyState">جاري التحميل...</div></div></section>
+<section class="panelSection" id="games"><div class="sectionTitle"><h2>🎮 الألعاب والجلسات</h2><button class="btn" id="newGameBtn" type="button">+ جلسة جديدة</button></div><div class="cardGrid" id="gamesList"><div class="emptyState">جاري التحميل...</div></div></section>
+<section class="panelSection" id="cinema"><div class="sectionTitle"><h2>🎬 السينما</h2><button class="btn" id="cinemaOpen" type="button">فتح السينما</button></div><p class="featureHint">محتوى متاح قانونيًا من المصادر المسموحة.</p><div class="cardGrid" id="cinemaCatalog"><div class="emptyState">اضغط فتح السينما لعرض القائمة</div></div></section>
+<section class="panelSection" id="downloads"><div class="sectionTitle"><h2>⬇️ التحميل</h2></div><form class="mediaForm" id="downloadForm"><input id="mediaUrl" type="url" placeholder="رابط مباشر لمحتوى تملك حق تنزيله" required><select id="mediaFormat"><option value="video">فيديو</option><option value="audio">صوت</option></select><button class="btn" type="submit">إضافة مهمة</button><small>يسمح فقط بالمحتوى الذي تملك حق تنزيله.</small></form><div id="downloadStatus" class="emptyState">لا توجد مهام تحميل</div></section>
+<section class="panelSection" id="leaderboard"><div class="sectionTitle"><h2>🏆 التوب</h2></div><div class="leaderboard" id="leaderboardList"></div></section>
+<section class="panelSection" id="ratings"><div class="sectionTitle"><h2>⭐ التقييمات</h2><button class="btn" id="addRatingBtn" type="button">تقييم الآن</button></div><div class="ratingList" id="ratingsList"></div></section>
+<section class="panelSection" id="messages"><div class="sectionTitle"><h2>💌 الرسائل الخاصة</h2></div><div class="cardGrid"><div class="infoCard"><h3>إرسال رسالة</h3><input id="privateRecipient" placeholder="اسم المستلم أو معرّفه"><textarea id="privateText" placeholder="اكتب الرسالة..." style="width:100%;min-height:110px"></textarea><button class="btn" id="sendPrivateBtn" type="button">إرسال</button></div><div class="infoCard"><h3>الوارد والصادر</h3><div id="privateMessagesList" class="ratingList"><div class="emptyState">سجل الدخول لعرض الرسائل</div></div></div></div></section>
+<section class="panelSection" id="anonymous"><div class="sectionTitle"><h2>🕵️ رسائل مجهولة</h2><span class="cardPill">هوية المرسل مخفية عن المستلم</span></div><div class="cardGrid"><div class="infoCard"><h3>إرسال مجهول</h3><input id="anonymousRecipient" placeholder="اسم المستلم أو معرّفه"><textarea id="anonymousText" placeholder="اكتب الرسالة..." style="width:100%;min-height:110px"></textarea><button class="btn" id="sendAnonymousBtn" type="button">إرسال مجهول</button></div><div class="infoCard"><h3>الوارد</h3><div id="anonymousInbox" class="ratingList"><div class="emptyState">سجل الدخول لعرض الرسائل</div></div></div></div></section>
+</div></main>
+<div class="platformDrawer" id="platformDrawer" aria-hidden="true"><div class="drawerHead"><strong>MLD ملاذ</strong><button class="iconBtn" id="closePlatformMenu" type="button">×</button></div><a href="#home">🏠 الرئيسية</a><a href="#members">👥 الأعضاء</a><a href="#groups">💬 القروبات</a><a href="#games">🎮 الألعاب</a><a href="#cinema">🎬 السينما</a><a href="#messages">💌 الرسائل</a><a href="#anonymous">🕵️ المجهولة</a><a href="/admin" id="drawerAdminLink" hidden>⚙️ لوحة الإدارة</a></div>
+<div class="modal" id="authModal" aria-hidden="true"><div class="modalCard"><button class="modalClose" id="closeModalBtn" type="button">×</button><div id="modalContent"></div></div></div>
+<script src="/app.js"></script><script src="/messages.js"></script><script src="/member-picker.js"></script><script src="/platform-features.js"></script>
+</body></html>
