@@ -181,23 +181,19 @@ function renderMemberList(items = []) {
   const list = $('#memberList');
   if (!list) return;
   const query = state.memberQuery.trim().toLowerCase();
-  const filtered = items.filter((name) => name.toLowerCase().includes(query)).slice(0, 10);
+  const filtered = items.filter((member) => { const name = typeof member === 'string' ? member : (member.name || member.username || ''); return name.toLowerCase().includes(query); }).slice(0, 30);
 
   if (!filtered.length) {
     list.innerHTML = '<div class="emptyState">لا توجد نتائج لهذا البحث</div>';
     return;
   }
 
-  list.innerHTML = filtered.map((name) => `
+  list.innerHTML = filtered.map((member) => { const m = typeof member === 'string' ? { name: member } : member; const name = m.name || m.username || 'عضو'; return `
     <div class="memberCard">
-      <div class="memberAvatar">${escapeHtml(String(name).charAt(0).toUpperCase())}</div>
-      <div class="memberText">
-        <b>${escapeHtml(name)}</b>
-        <small>عضو متصل</small>
-      </div>
+      <img class="memberAvatar memberAvatarImg" src="${escapeHtml(m.avatar || '/server-avatar.svg')}" alt="" onerror="this.src='/server-avatar.svg'">
+      <div class="memberText"><b>${escapeHtml(name)}</b><small>@${escapeHtml(m.username || name)}</small></div>
       <span class="memberStatus">●</span>
-    </div>
-  `).join('');
+    </div>`; }).join('');
 }
 
 function renderGroups(groups = []) {
