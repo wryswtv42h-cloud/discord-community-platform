@@ -1280,6 +1280,16 @@ app.get('/api/health', (req, res) => {
 
 // Discord group workflow callbacks are registered additively; existing APIs remain unchanged.
 globalThis.mldDiscord.groupHandlers = {
+  getGroup(groupId){ return db.groups.find(g=>g.id===groupId); },
+  getRequest(requestId){ return (db.groupJoinRequests||[]).find(r=>r.id===requestId); },
+  async confirmGroup(groupId, discordUserId, confirmed) {
+    const group=db.groups.find(g=>g.id===groupId);
+    if(!group || group.ownerDiscordId!==discordUserId || group.status!=='pending_approval') return;
+    if(!confirmed){ group.status='cancelled'; group.approvalStatus='cancelled'; group.cancelledAt=now(); save(); return; }
+    group.confirmedAt=now();
+    save();
+    await globalThis.mldDiscord.requestOwnerGroupApproval(group.id);
+  },
   async approveGroup(groupId, approved) {
     const group=db.groups.find(g=>g.id===groupId);
     if(!group || group.status!=='pending_approval') return;
