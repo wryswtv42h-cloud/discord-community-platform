@@ -923,8 +923,26 @@ app.post('/api/anonymous-messages',optionalAuth,(req,res)=>{
   if(!Array.isArray(db.anonymousMessages)) db.anonymousMessages=[];
   db.anonymousMessages.unshift(item); db.anonymousMessages=db.anonymousMessages.slice(0,5000);
   if(item.recipientId){ if(!Array.isArray(db.notifications)) db.notifications=[]; db.notifications.unshift({id:id(),userId:item.recipientId,type:'anonymous',messageId:item.id,read:false,createdAt:now()}); }
-  db.notifications=db.notifications.slice(0,5000); save();audit('anonymous_message_sent',req.user?.id||null,{messageId:item.id,recipientId:item.recipientId});
-  res.status(201).json({id:item.id,createdAt:item.createdAt});
+  db.notifications=db.notifications.slice(0,5000);
+  item.status='queued';
+  save();
+  audit('anonymous_message_sent',req.user?.id||null,{messageId:item.id,recipientId:item.recipientId});
+  try {
+    if (globalThis.mldDiscord?.sendDM) {
+      await globalThis.mldDiscord.sendDM(recipientId, `📨 رسالة مجهولة عبر ملاذ\\n\\n${item.message}`);
+      item.status='delivered';
+      item.deliveredAt=now();
+    } else {
+      item.status='stored';
+      item.deliveryError='Discord bot unavailable';
+    }
+  } catch (error) {
+    item.status='stored';
+    item.deliveryError=String(error?.message||error).slice(0,500);
+    console.warn('[anonymous] Discord DM failed:', item.deliveryError);
+  }
+  save();
+  res.status(201).json({id:item.id,createdAt:item.createdAt,status:item.status});
 });
 app.get('/api/anonymous-messages',auth,(req,res)=>res.json(db.anonymousMessages.filter(m=>m.recipientId===req.user.id||(m.recipientName&&m.recipientName.toLowerCase()===req.user.username.toLowerCase())).map(m=>({id:m.id,recipientName:m.recipientName,message:m.message,createdAt:m.createdAt,readAt:m.readAt})).slice(0,200)));
 app.get('/api/notifications',auth,(req,res)=>{
