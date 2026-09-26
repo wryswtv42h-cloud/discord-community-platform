@@ -892,8 +892,10 @@ app.post('/api/private-messages', auth, (req,res)=>{
   const recipientId=String(req.body.recipientId||'').trim(), message=String(req.body.message||'').trim(), title=String(req.body.title||'رسالة خاصة').trim();
   if(!recipientId||!message)return res.status(400).json({error:'حدد المستلم واكتب الرسالة'});
   if(recipientId===req.user.id)return res.status(400).json({error:'لا يمكنك مراسلة نفسك'});
-  const recipient=getUser(recipientId);
+  let recipient=getUser(recipientId);
+  if(!recipient) recipient=db.users.find(u=>u.username.toLowerCase()===recipientId.toLowerCase());
   if(!recipient) return res.status(404).json({error:'المستلم غير موجود'});
+  recipientId=recipient.id;
   const item={id:id(),recipientId,senderId:req.user.id,senderUsername:req.user.username,recipientUsername:recipient.username,title:title.slice(0,120),message:message.slice(0,4000),createdAt:now(),readAt:null};
   db.privateMessages.unshift(item); db.privateMessages=db.privateMessages.slice(0,5000);
   if(!Array.isArray(db.notifications)) db.notifications=[];
