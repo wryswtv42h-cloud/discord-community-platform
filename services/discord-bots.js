@@ -9,6 +9,14 @@ const definitions = [
 
 const clients = new Map();
 
+async function getMembers() {
+  const client=Array.from(clients.values()).find(c=>c.isReady());
+  if(!client||!globalThis.mldDiscord.guildId)return [];
+  const guild=await client.guilds.fetch(globalThis.mldDiscord.guildId);
+  const members=await guild.members.fetch();
+  return Array.from(members.values()).filter(m=>!m.user.bot).map(m=>({id:m.id,name:m.displayName||m.user.globalName||m.user.username,username:m.user.username,avatar:m.displayAvatarURL({extension:'png',size:128}),status:m.presence?.status||'offline',role:m.roles?.highest?.name||'عضو'}));
+}
+
 for (const [name, envName] of definitions) {
   const token = process.env[envName];
 
@@ -45,5 +53,6 @@ for (const [name, envName] of definitions) {
 
 globalThis.mldDiscord = {
   guildId: process.env.DISCORD_GUILD_ID || '',
-  clients
+  clients,
+  getMembers
 };
