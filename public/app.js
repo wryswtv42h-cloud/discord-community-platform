@@ -286,25 +286,17 @@ function renderRatings(ratings = []) {
   `).join('');
 }
 
-function renderLeaderboard(games = []) {
+function renderLeaderboard(data = []) {
   const list = $('#leaderboardList');
   if (!list) return;
-
-  const top = [
-    { name: 'قمة الأبطال', score: 98 },
-    { name: 'مستوى القسام', score: 94 },
-    { name: 'السرعة', score: 92 },
-    { name: 'المتنوع', score: 89 }
-  ];
-
-  list.innerHTML = top.map((entry, index) => `
-    <div class="leaderCard">
-      <div>
-        <span class="cardPill">#${index + 1}</span>
-        <h3>${escapeHtml(entry.name)}</h3>
-      </div>
-      <strong>${entry.score}</strong>
-    </div>
+  const top = Array.isArray(data) && data.length && data[0]?.username
+    ? data : [];
+  if (!top.length) {
+    list.innerHTML = '<div class="emptyState">لا توجد نقاط مسجلة بعد</div>';
+    return;
+  }
+  list.innerHTML = top.slice(0, 10).map((entry,index) => `
+    <div class="leaderCard"><div><span class="cardPill">#${index+1}</span><h3>${escapeHtml(entry.username)}</h3></div><strong>${Number(entry.points||0)}</strong></div>
   `).join('');
 }
 
@@ -435,17 +427,20 @@ async function loadPublicData() {
 
     $('#visitCount').textContent = data.visits || 0;
     $('#heroVisits').textContent = `◈ ${data.visits || 0} زيارات`;
-    $('#memberCount').textContent = (data.onlineMembers || []).length;
+    $('#memberCount').textContent = (data.members || data.onlineMembers || []).length;
     $('#heroOnline').textContent = `● ${(data.onlineMembers || []).length} أعضاء متصلين`;
     $('#groupsCount').textContent = (data.groups || []).length;
     $('#gamesCount').textContent = (data.games || []).length;
 
-    renderMemberList(data.onlineMembers || []);
+    renderMemberList(data.members || data.onlineMembers || []);
     renderGroups(data.groups || []);
     renderGames(data.games || []);
     renderRatings(data.ratings || []);
-    renderLeaderboard(data.games || []);
+    renderLeaderboard(data.leaderboard || []);
     renderAuth();
+    const isStaff = ['owner','admin'].includes(state.me?.role);
+    $('#adminNavLink')?.toggleAttribute('hidden', !isStaff);
+    $('#drawerAdminLink')?.toggleAttribute('hidden', !isStaff);
   } catch (error) {
     showToast(error.message);
   }
@@ -476,16 +471,7 @@ function bindEvents() {
     element.addEventListener('click', () => openAuth(element.dataset.auth));
   });
 
-  $('.mobileMenu').addEventListener('click', () => {
-    if (window.innerWidth <= 900) {
-      toggleSidebar();
-    } else {
-      const sidebar = $('#sidebar');
-      const main = $('#main');
-      sidebar.classList.toggle('collapsed');
-      main.classList.toggle('expanded');
-    }
-  });
+  $('#platformMenuBtn')?.addEventListener('dblclick', () => toggleSidebar());
 
   $$('nav a').forEach((link) => {
     link.addEventListener('click', () => {
