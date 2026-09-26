@@ -282,6 +282,22 @@ function renderLeaderboard(data = []) {
   `).join('');
 }
 
+async function openCinema() {
+  const list=$('#cinemaCatalog'); if(!list)return;
+  list.innerHTML='<div class="emptyState">جاري تحميل السينما...</div>';
+  try {
+    const data=await api('/cinema/catalog');
+    list.innerHTML=(data.items||[]).slice(0,24).map(item=>`
+      <article class="cinemaCard"><img src="${escapeHtml(item.thumbnail||'/server-banner.svg')}" alt="" onerror="this.src='/server-banner.svg'"><div class="cinemaCardBody"><span class="cardPill">${escapeHtml(item.genre||'فيلم')}</span><h3>${escapeHtml(item.titleAr||item.title)}</h3><p>${escapeHtml(item.description||'')}</p><div class="cardActions"><a class="btn" target="_blank" rel="noopener" href="${escapeHtml(item.sourceUrl)}">المصدر</a><button class="btn ghost" data-cinema="${escapeHtml(item.id)}">طلب جلسة</button></div></div></article>`).join('')||'<div class="emptyState">لا يوجد محتوى متاح الآن</div>';
+    $('[data-cinema]').forEach(b=>b.onclick=async()=>{if(!state.token)return openAuth('login');const channelId=prompt('معرّف روم الصوت في Discord');if(!channelId)return;try{await api('/cinema/sessions',{method:'POST',body:{itemId:b.dataset.cinema,channelId}});showToast('تم إرسال طلب جلسة السينما');}catch(e){showToast(e.message)}});
+  } catch(e){list.innerHTML='<div class="emptyState">'+escapeHtml(e.message)+'</div>'}
+}
+async function submitDownload(event){
+  event.preventDefault(); if(!state.token)return openAuth('login');
+  const url=$('#mediaUrl')?.value.trim(),format=$('#mediaFormat')?.value||'video'; if(!url)return;
+  try{await api('/control/downloads',{method:'POST',body:{url,format}});$('#downloadStatus').textContent='تمت إضافة مهمة التحميل إلى قائمة الانتظار.';event.target.reset();}catch(e){showToast(e.message)}
+}
+
 async function addRating() {
   if (!state.token) return openAuth('login');
 
@@ -442,7 +458,9 @@ function bindEvents() {
   $('#newGroupBtn').addEventListener('click', createGroup);
   $('#createGroupBtn').addEventListener('click', createGroup);
   $('#newGameBtn').addEventListener('click', createGame);
-  $('#addRatingBtn').addEventListener('click', addRating);
+  $('#addRatingBtn')?.addEventListener('click', addRating);
+  $('#cinemaOpen')?.addEventListener('click', openCinema);
+  $('#downloadForm')?.addEventListener('submit', submitDownload);
 
   $('#closeModalBtn').addEventListener('click', closeModal);
   $('#authModal').addEventListener('click', (event) => {
