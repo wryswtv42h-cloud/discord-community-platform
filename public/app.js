@@ -278,15 +278,14 @@ function renderRatings(ratings = []) {
     return;
   }
 
-  list.innerHTML = ratings.slice(0, 6).map((rating) => `
+  const cards = ratings.slice(0, 12).map((rating) => `
     <div class="ratingCard">
       <div class="ratingStars">${'★'.repeat(Number(rating.value || 5))}${'☆'.repeat(5 - Number(rating.value || 5))}</div>
       <p>${escapeHtml(rating.text || 'تجربة رائعة!')}</p>
-      <div class="cardMeta">
-        <span>${escapeHtml(rating.user || 'مستخدم')}</span>
-      </div>
+      <div class="cardMeta"><span>${escapeHtml(rating.user || 'مستخدم')}</span></div>
     </div>
   `).join('');
+  list.innerHTML = `<div class="ratingViewport"><div class="ratingTrack">${cards}${cards}</div></div>`;
 }
 
 function renderLeaderboard(data = []) {
