@@ -904,10 +904,20 @@ app.post('/api/private-messages', auth, (req,res)=>{
 app.get('/api/private-messages',auth,(req,res)=>res.json(db.privateMessages.filter(m=>m.senderId===req.user.id||m.recipientId===req.user.id).slice(0,200)));
 app.post('/api/private-messages/:id/read',auth,(req,res)=>{const m=db.privateMessages.find(x=>x.id===req.params.id);if(!m||m.recipientId!==req.user.id)return res.status(404).json({error:'الرسالة غير موجودة'});m.readAt=now();save();res.json({ok:true});});
 app.post('/api/anonymous-messages',optionalAuth,(req,res)=>{
-  const recipientId=String(req.body.recipientId||'').trim(),recipientName=String(req.body.recipientName||'').trim(),message=String(req.body.message||'').trim();
+  let recipientId=String(req.body.recipientId||'').trim();
+  let recipientName=String(req.body.recipientName||'').trim();
+  const message=String(req.body.message||'').trim();
   if(!message||message.length>4000)return res.status(400).json({error:'اكتب الرسالة بشكل صحيح'});
   if(!recipientId&&!recipientName)return res.status(400).json({error:'حدد المستلم'});
-  const item={id:id(),recipientId:recipientId||null,recipientName:recipientName.slice(0,120),message:message.slice(0,4000),senderId:req.user?.id||null,senderUsername:req.user?.username||null,createdAt:now(),readAt:null,status:'sent'};
+  if(!recipientId && recipientName){
+    const found=db.users.find(u=>u.username.toLowerCase()===recipientName.toLowerCase());
+    if(found) recipientId=found.id;
+  } else if(recipientId){
+    const found=db.users.find(u=>u.id===recipientId || u.username.toLowerCase()===recipientId.toLowerCase());
+    if(found){ recipientId=found.id; recipientName=found.username; }
+  }
+  if(!recipientId)return res.status(404).json({error:'المستلم غير موجود'});
+  const item={id:id(),recipientId,recipientName:recipientName.slice(0,120),message:message.slice(0,4000),senderId:req.user?.id||null,senderUsername:req.user?.username||null,createdAt:now(),readAt:null,status:'sent'};
   if(!Array.isArray(db.anonymousMessages)) db.anonymousMessages=[];
   db.anonymousMessages.unshift(item); db.anonymousMessages=db.anonymousMessages.slice(0,5000);
   if(item.recipientId){ if(!Array.isArray(db.notifications)) db.notifications=[]; db.notifications.unshift({id:id(),userId:item.recipientId,type:'anonymous',messageId:item.id,read:false,createdAt:now()}); }
