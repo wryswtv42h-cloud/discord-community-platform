@@ -24,7 +24,6 @@ const defaults = {
   privateMessages: [],
   anonymousMessages: [],
   notifications: [],
-  anonymousMessages: [],
   cinemaRequests: [],
   downloadRequests: [],
   cinemaCatalog: [],
@@ -606,6 +605,23 @@ app.post('/api/games/:id/join', auth, (req, res) => {
 
 app.post('/api/games/:id/leave',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'جلسة اللعبة غير موجودة'});g.playerIds=(g.playerIds||[]).filter(x=>x!==req.user.id);g.status=g.playerIds.length>=g.max?'full':'waiting';if(!g.playerIds.length)g.status='waiting';save();res.json(getPublicGame(g));});
 app.get('/api/games/:id',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'اللعبة غير موجودة'});res.json(getPublicGame(g));});
+app.post('/api/games/:id/start',auth,(req,res)=>{
+ const g=db.games.find(x=>x.id===req.params.id);
+ if(!g)return res.status(404).json({error:'اللعبة غير موجودة'});
+ if(g.createdBy!==req.user.id&&!['owner','admin'].includes(req.user.role))return res.status(403).json({error:'ليس لديك صلاحية بدء الجلسة'});
+ if((g.playerIds||[]).length<g.min)return res.status(409).json({error:'عدد اللاعبين غير كافٍ'});
+ g.status='playing';g.state={...(g.state||{}),phase:'playing',turn:g.playerIds[0],moves:g.state?.moves||[]};save();audit('game_started',req.user.id,{gameId:g.id});res.json(getPublicGame(g));
+});
+app.post('/api/games/:id/move',auth,(req,res)=>{
+ const g=db.games.find(x=>x.id===req.params.id);
+ if(!g||g.status!=='playing')return res.status(409).json({error:'اللعبة ليست قيد اللعب'});
+ if(!(g.playerIds||[]).includes(req.user.id))return res.status(403).json({error:'أنت لست لاعبًا'});
+ if(g.state?.turn&&g.state.turn!==req.user.id)return res.status(409).json({error:'ليس دورك الآن'});
+ const move=String(req.body.move||'').trim().slice(0,500);if(!move)return res.status(400).json({error:'الحركة غير صالحة'});
+ const i=g.playerIds.indexOf(req.user.id),next=g.playerIds[(i+1)%g.playerIds.length];
+ g.state={...(g.state||{}),phase:'playing',turn:next,moves:[...(g.state?.moves||[]),{by:req.user.id,move,at:now()}].slice(-200)};
+ save();audit('game_move',req.user.id,{gameId:g.id});res.json(getPublicGame(g));
+});
 /*
  * التقديمات
  */
