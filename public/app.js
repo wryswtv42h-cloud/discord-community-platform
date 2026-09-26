@@ -235,35 +235,17 @@ function renderGroups(groups = []) {
 function renderGames(games = []) {
   const list = $('#gamesList');
   if (!list) return;
-
-  if (!games.length) {
-    list.innerHTML = '<div class="emptyState">لا توجد ألعاب الآن</div>';
-    return;
-  }
-
-  list.innerHTML = games.map((game) => {
-    const playerCount = Array.isArray(game.players) ? game.players.length : 0;
-    const canJoin = playerCount < (game.max || 4);
-
-    return `
-      <div class="gameCard">
-        <span class="cardPill">🎮 ${game.visibility === 'private' ? 'خاص' : 'عام'}</span>
-        <h3>${escapeHtml(game.title)}</h3>
-        <p>اللاعبون ${playerCount}/${game.max || 4} · الحد الأدنى ${game.min || 2}</p>
-        <div class="cardMeta">
-          ${Array.isArray(game.players) ? game.players.slice(0, 2).map((u) => `<span>${escapeHtml(u)}</span>`).join('') : '<span>لا يوجد لاعبين</span>'}
-        </div>
-        <div class="cardActions">
-          <button class="btn" type="button" data-game-join="${game.id}">${canJoin ? 'انضمام' : 'ممتلئة'}</button>
-        </div>
-      </div>
-    `;
+  if (!games.length) { list.innerHTML = '<div class="emptyState">لا توجد جلسات الآن — افتح أول جلسة!</div>'; return; }
+  const labels={uno:'UNO',ludo:'لودو',baloot:'بلوت',qawsar:'قوسر',custom:'مخصصة'};
+  list.innerHTML=games.map(game=>{
+    const count=Array.isArray(game.players)?game.players.length:0;
+    const status=game.status==='playing'?'🔥 قيد اللعب':game.status==='full'?'ممتلئة':'انتظار';
+    const join=count<(game.max||4)&&game.status!=='playing';
+    return `<div class="gameCard"><span class="cardPill">🎮 ${escapeHtml(labels[game.type]||game.type||'جلسة')} · ${status}</span><h3>${escapeHtml(game.title)}</h3><p>اللاعبون ${count}/${game.max||4} · الحد الأدنى ${game.min||2}</p><div class="cardMeta">${(game.players||[]).map(u=>`<span>${escapeHtml(u)}</span>`).join('')||'<span>بانتظار اللاعبين</span>'}</div><div class="cardActions">${join?`<button class="btn" data-game-join="${game.id}">انضمام</button>`:''}${state.me&&game.createdBy===state.me.id&&game.status!=='playing'?`<button class="btn ghost" data-game-start="${game.id}">بدء</button>`:''}${state.me&&(game.players||[]).includes(state.me.username)&&game.status==='playing'?'<button class="btn ghost" data-game-move="'+game.id+'">حركة</button>':''}</div></div>`;
   }).join('');
-
-  $$('[data-game-join]').forEach((button) => {
-    button.disabled = !button.textContent.includes('انضمام');
-    button.addEventListener('click', () => joinGame(button.dataset.gameJoin));
-  });
+  $('[data-game-join]').forEach(b=>b.onclick=()=>joinGame(b.dataset.gameJoin));
+  $('[data-game-start]').forEach(b=>b.onclick=async()=>{try{await api('/games/'+b.dataset.gameStart+'/start',{method:'POST'});showToast('بدأت اللعبة');loadPublicData()}catch(e){showToast(e.message)}});
+  $('[data-game-move]').forEach(b=>b.onclick=async()=>{const move=prompt('اكتب الحركة');if(!move)return;try{await api('/games/'+b.dataset.gameMove+'/move',{method:'POST',body:{move}});loadPublicData()}catch(e){showToast(e.message)}});
 }
 
 function renderRatings(ratings = []) {
@@ -344,12 +326,12 @@ async function createGame() {
 
   const title = prompt('اسم اللعبة', 'جلسة جديدة');
   if (!title) return;
-
+  const typeInput=prompt('نوع اللعبة: uno / ludo / baloot / qawsar / custom','uno')||'custom';
+  const type=['uno','ludo','baloot','qawsar','custom'].includes(typeInput.toLowerCase())?typeInput.toLowerCase():'custom';
   const min = Number(prompt('الحد الأدنى للعب', '2')) || 2;
   const max = Number(prompt('الحد الأقصى للعب', '4')) || 4;
-
   try {
-    await api('/games', { method: 'POST', body: { title, min, max, visibility: 'public' } });
+    await api('/games', { method: 'POST', body: { title, type, min, max, visibility: 'public' } });
     showToast('تم فتح الجلسة');
     await loadPublicData();
   } catch (error) {
