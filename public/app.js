@@ -342,20 +342,24 @@ async function addRating() {
 
 async function createGroup() {
   if (!state.token) return openAuth('login');
-
-  const name = prompt('اسم القروب', 'قروب جديد');
-  if (!name) return;
-
-  const description = prompt('وصف القروب', 'مجتمع مميز للتفاعل');
-  if (description === null) return;
-
-  try {
-    await api('/groups', { method: 'POST', body: { name, description } });
-    showToast('تم إنشاء القروب');
-    await loadPublicData();
-  } catch (error) {
-    showToast(error.message);
+  if (!state.me?.discordId) {
+    const discordId=prompt('اربط حساب Discord\nأدخل Discord User ID الخاص بك:');
+    if (!discordId) return;
+    try {
+      const linked=await api('/auth/discord-link',{method:'POST',body:{discordId}});
+      state.me=linked.user;
+      showToast('تم ربط حساب Discord');
+    } catch(error) { return showToast(error.message); }
   }
+  const name=prompt('اسم القروب','قروب جديد');
+  if(!name) return;
+  const description=prompt('وصف القروب','مجتمع مميز للتفاعل');
+  if(description===null)return;
+  try {
+    const result=await api('/groups',{method:'POST',body:{name,description,discordId:state.me.discordId}});
+    showToast(result.message||'تم إرسال طلب إنشاء القروب إلى Discord');
+    await loadPublicData();
+  } catch(error){showToast(error.message);}
 }
 
 async function createGame() {
@@ -458,8 +462,15 @@ async function loadPublicData() {
     renderLeaderboard(data.leaderboard || []);
     renderAuth();
     const isStaff = ['owner','admin'].includes(state.me?.role);
+    const controlLink = state.me?.role === 'owner' ? '/owner' : '/admin';
     $('#adminNavLink')?.toggleAttribute('hidden', !isStaff);
     $('#drawerAdminLink')?.toggleAttribute('hidden', !isStaff);
+    if (isStaff) {
+      if ($('#adminNavLink')) $('#adminNavLink').href = controlLink;
+      if ($('#drawerAdminLink')) $('#drawerAdminLink').href = controlLink;
+      if ($('#adminNavLink span')) $('#adminNavLink span').textContent = state.me.role === 'owner' ? 'لوحة الـOwner' : 'لوحة الإدارة';
+      if ($('#drawerAdminLink')) $('#drawerAdminLink').innerHTML = state.me.role === 'owner' ? '👑 لوحة الـOwner' : '⚙️ لوحة الإدارة';
+    }
   } catch (error) {
     showToast(error.message);
   }
@@ -468,7 +479,7 @@ async function loadPublicData() {
 function bindEvents() {
   $('#searchMemberBtn').addEventListener('click', () => {
     state.memberQuery = $('#memberSearchInput').value;
-    renderMemberList(state.publicData?.onlineMembers || []);
+    renderMemberList(state.publicData?.members || state.publicData?.onlineMembers || []);
   });
 
   $('#memberSearchInput').addEventListener('input', (event) => {
