@@ -1074,6 +1074,9 @@ app.delete(
 );
 
 app.get('/api/admin/users',auth,allow('owner','admin'),(req,res)=>res.json({users:db.users.filter(u=>u.role!=='system').map(safeUser)}));
+app.get('/api/admin/groups',auth,allow('owner','admin'),(req,res)=>res.json(db.groups.map(g=>({...getPublicGroup(g),owner:getUser(g.ownerId)?.username||'',status:g.status,discord:g.discord||null}))));
+app.get('/api/owner/groups',auth,allow('owner'),(req,res)=>res.json(db.groups.map(g=>({...getPublicGroup(g),owner:getUser(g.ownerId)?.username||'',status:g.status,discord:g.discord||null}))));
+app.get('/api/owner/group-join-requests',auth,allow('owner'),(req,res)=>res.json(db.groupJoinRequests||[]));
 app.get('/api/admin/stats',auth,allow('owner','admin'),(req,res)=>res.json({
   users:db.users.length,groups:db.groups.length,games:db.games.length,ratings:db.ratings.length,
   tickets:db.tickets.length,applications:db.applications.length,privateMessages:db.privateMessages.length,
