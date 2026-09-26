@@ -24,6 +24,7 @@ const defaults = {
   privateMessages: [],
   anonymousMessages: [],
   notifications: [],
+  groupJoinRequests: [],
   cinemaRequests: [],
   downloadRequests: [],
   cinemaCatalog: [],
@@ -407,6 +408,25 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
+app.post('/api/auth/discord-link', auth, async (req, res) => {
+  const discordId = String(req.body.discordId || '').trim();
+  if (!/^\\d{15,25}$/.test(discordId)) return res.status(400).json({error:'معرّف Discord غير صحيح'});
+  try {
+    if (globalThis.mldDiscord?.verifyUser) await globalThis.mldDiscord.verifyUser(discordId);
+  } catch (error) {
+    return res.status(400).json({error:'تعذر العثور على حساب Discord عبر البوت'});
+  }
+  const user = getUser(req.user.id);
+  if (!user) return res.status(404).json({error:'المستخدم غير موجود'});
+  const duplicate = db.users.find(u => u.discordId === discordId && u.id !== user.id);
+  if (duplicate) return res.status(409).json({error:'حساب Discord مرتبط بحساب آخر'});
+  user.discordId = discordId;
+  user.discordLinkedAt = now();
+  save();
+  audit('discord_linked', req.user.id, {discordId});
+  res.json({user:safeUser(user)});
+});
+
 app.get('/api/me', auth, (req, res) => {
   const user = getUser(req.user.id);
 
@@ -489,48 +509,74 @@ app.post('/api/ratings', auth, (req, res) => {
 /*
  * القروبات
  */
-app.post('/api/groups', auth, (req, res) => {
+app.post('/api/groups', auth, async (req, res) => {
   const name = String(req.body.name || '').trim();
   const description = String(req.body.description || '').trim();
+  const discordId = String(req.body.discordId || '').trim();
 
-  if (name.length < 2 || name.length > 80) {
-    return res.status(400).json({
-      error: 'اسم القروب غير صحيح'
-    });
+  if (name.length < 2 || name.length > 80) return res.status(400).json({error:'اسم القروب غير صحيح'});
+  if (!discordId || !/^\\d{15,25}$/.test(discordId)) return res.status(400).json({error:'اربط حساب Discord أولًا'});
+  const owner = getUser(req.user.id);
+  if (!owner) return res.status(404).json({error:'المستخدم غير موجود'});
+  if (owner.discordId !== discordId) {
+    return res.status(400).json({error:'معرّف Discord لا يطابق الحساب المرتبط بك'});
+  }
+  if (db.groups.some(g => g.ownerId === owner.id && ['pending_approval','open'].includes(g.status))) {
+    return res.status(409).json({error:'لديك قروب قائم أو طلب إنشاء قروب قيد المراجعة'});
   }
 
   const group = {
-    id: id(),
+    id:id(),
     name,
-    description: description.slice(0, 500),
-    ownerId: req.user.id,
-    memberIds: [req.user.id],
-    status: 'open',
-    createdAt: now()
+    description:description.slice(0,500),
+    ownerId:owner.id,
+    ownerDiscordId:discordId,
+    memberIds:[owner.id],
+    status:'pending_approval',
+    approvalStatus:'pending',
+    discord:{categoryId:null,channelId:null,roleId:null},
+    createdAt:now()
   };
-
   db.groups.unshift(group);
   save();
-  audit('group_created', req.user.id, { groupId: group.id });
-
-  res.status(201).json(getPublicGroup(group));
+  audit('group_creation_requested', req.user.id, {groupId:group.id});
+  try {
+    await globalThis.mldDiscord?.requestGroupConfirmation?.(group.id, discordId);
+  } catch (error) {
+    group.status='pending_approval';
+    group.approvalError=String(error?.message||error).slice(0,500);
+    save();
+    return res.status(503).json({error:'تعذر إرسال تأكيد Discord. تأكد من ربط الحساب والبوت.', group:getPublicGroup(group)});
+  }
+  res.status(201).json({message:'تم إرسال طلب التأكيد إلى Discord الخاص بك',group:getPublicGroup(group)});
 });
 
-app.post('/api/groups/:id/join', auth, (req, res) => {
-  const group = db.groups.find((entry) => entry.id === req.params.id);
-
-  if (!group || group.status !== 'open') {
-    return res.status(404).json({
-      error: 'القروب غير موجود'
-    });
-  }
-
-  if (!group.memberIds.includes(req.user.id)) {
-    group.memberIds.push(req.user.id);
+app.post('/api/groups/:id/join', auth, async (req, res) => {
+  const group=db.groups.find(entry=>entry.id===req.params.id);
+  if(!group || group.status!=='open') return res.status(404).json({error:'القروب غير متاح حاليًا'});
+  if(group.memberIds?.includes(req.user.id)) return res.status(409).json({error:'أنت عضو في القروب بالفعل'});
+  if(!Array.isArray(db.groupJoinRequests)) db.groupJoinRequests=[];
+  const existing=db.groupJoinRequests.find(x=>x.groupId===group.id && x.userId===req.user.id && x.status==='pending');
+  if(existing) return res.status(409).json({error:'طلبك موجود وينتظر موافقة مالك القروب'});
+  const applicant=getUser(req.user.id);
+  if(!applicant?.discordId) return res.status(400).json({error:'اربط حساب Discord أولًا قبل طلب الانضمام'});
+  const request={id:id(),groupId:group.id,userId:req.user.id,username:req.user.username,discordId:applicant.discordId,status:'pending',createdAt:now()};
+  db.groupJoinRequests.unshift(request);
+  save();
+  audit('group_join_requested',req.user.id,{groupId:group.id,requestId:request.id});
+  try {
+    await globalThis.mldDiscord?.notifyGroupOwnerJoinRequest?.(group.id,request.id);
+  } catch (error) {
+    request.notificationError=String(error?.message||error).slice(0,500);
     save();
-    audit('group_joined', req.user.id, { groupId: group.id });
+    return res.status(503).json({error:'تم حفظ الطلب لكن تعذر إرسال إشعار Discord لمالك القروب'});
   }
+  res.status(201).json({message:'تم إرسال طلب الانضمام إلى مالك القروب عبر Discord',request});
+});
 
+app.get('/api/groups/:id', auth, (req,res)=>{
+  const group=db.groups.find(x=>x.id===req.params.id);
+  if(!group) return res.status(404).json({error:'القروب غير موجود'});
   res.json(getPublicGroup(group));
 });
 
@@ -1230,6 +1276,36 @@ app.get('/api/health', (req, res) => {
     pendingDownloadRequests: db.downloadRequests.length
   });
 });
+
+
+// Discord group workflow callbacks are registered additively; existing APIs remain unchanged.
+globalThis.mldDiscord.groupHandlers = {
+  async approveGroup(groupId, approved) {
+    const group=db.groups.find(g=>g.id===groupId);
+    if(!group || group.status!=='pending_approval') return;
+    if(!approved){ group.status='rejected'; group.approvalStatus='rejected'; group.rejectedAt=now(); save(); audit('group_rejected_by_owner',null,{groupId}); return; }
+    const created=await globalThis.mldDiscord.createGroupDiscordResources(group);
+    group.status='open'; group.approvalStatus='approved'; group.discord=created; group.approvedAt=now();
+    save(); audit('group_approved_by_owner',null,{groupId,discord:created});
+    await globalThis.mldDiscord.sendDM(group.ownerDiscordId, `✅ تم قبول قروب «${group.name}» وإنشاء قسمه ورومه ورتبته في السيرفر.`);
+  },
+  async decideJoin(requestId, approved) {
+    const request=(db.groupJoinRequests||[]).find(x=>x.id===requestId);
+    if(!request || request.status!=='pending') return;
+    const group=db.groups.find(g=>g.id===request.groupId);
+    if(!group) { request.status='rejected'; save(); return; }
+    request.status=approved?'accepted':'rejected'; request.decidedAt=now();
+    if(approved){
+      if(!group.memberIds.includes(request.userId)) group.memberIds.push(request.userId);
+      await globalThis.mldDiscord.assignGroupRole(request.discordId,group.discord.roleId);
+    }
+    save(); audit(approved?'group_join_accepted':'group_join_rejected',group.ownerId,{groupId:group.id,requestId});
+    await globalThis.mldDiscord.sendDM(request.discordId, approved ? `🎉 تمت الموافقة على انضمامك إلى قروب «${group.name}» وتم منحك رتبة القروب.` : `❌ تم رفض طلب انضمامك إلى قروب «${group.name}».`);
+  }
+};
+
+app.get('/owner', (req,res)=>res.sendFile(path.join(root,'public','owner.html')));
+app.get('/admin', (req,res)=>res.sendFile(path.join(root,'public','admin.html')));
 
 /*
  * يجب أن يكون هذا المسار آخر مسار.
