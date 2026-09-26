@@ -149,3 +149,13 @@
     width: 92vw;
   }
 }
+
+
+/* Homepage ratings: horizontal motion with soft edge fading. */
+#ratings .ratingViewport{position:relative;overflow:hidden;margin-inline:-4px;padding:4px 0}
+#ratings .ratingViewport::before,#ratings .ratingViewport::after{content:"";position:absolute;top:0;bottom:0;width:72px;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(12,17,25,1),transparent)}
+#ratings .ratingViewport::after{right:0;transform:scaleX(-1)}
+#ratings .ratingTrack{display:flex;gap:14px;width:max-content;animation:mldRatingsMove 28s linear infinite}
+#ratings .ratingTrack:hover{animation-play-state:paused}
+#ratings .ratingTrack .ratingCard{width:min(310px,78vw);flex:0 0 auto}
+@keyframes mldRatingsMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
