@@ -22,6 +22,7 @@ const defaults = {
   applications: [],
   tickets: [],
   privateMessages: [],
+  anonymousMessages: [],
   cinemaRequests: [],
   downloadRequests: [],
   cinemaCatalog: [],
@@ -430,26 +431,21 @@ app.post('/api/visit', (req, res) => {
   });
 });
 
-app.get('/api/public', (req, res) => {
-  const publicGroups = db.groups
-    .filter((group) => group.status === 'open')
-    .map(getPublicGroup);
-
-  const publicGames = db.games
-    .filter((game) => game.status === 'waiting')
-    .map(getPublicGame);
-
-  const onlineMembers = db.users
-    .slice(0, 50)
-    .map((user) => user.username);
-
-  res.json({
-    visits: db.stats.visits,
-    onlineMembers,
-    groups: publicGroups,
-    games: publicGames,
-    ratings: db.ratings.slice(0, 12)
-  });
+app.get('/api/public', async (req, res) => {
+  const publicGroups = db.groups.filter((group) => group.status === 'open').map(getPublicGroup);
+  const publicGames = db.games.filter((game) => game.status === 'waiting' || game.status === 'full').map(getPublicGame);
+  let members = [];
+  try { members = await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch (error) { console.error('Discord members:', error.message); }
+  if (!members.length) members = db.users.map((user) => ({ id:user.id,name:user.username,username:user.username,avatar:null,status:'offline',role:user.role }));
+  res.json({ visits:db.stats.visits, onlineMembers:members.slice(0,100), groups:publicGroups, games:publicGames, ratings:db.ratings.slice(0,12) });
+});
+app.get('/api/public/members', async (req,res)=>{
+  const q=String(req.query.q||'').trim().toLowerCase();
+  let members=[];
+  try { members=await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch (error) { console.error('Discord member search:',error.message); }
+  if(!members.length) members=db.users.map((user)=>({id:user.id,name:user.username,username:user.username,avatar:null,status:'offline',role:user.role}));
+  if(q) members=members.filter(m=>[m.name,m.username,m.id].filter(Boolean).join(' ').toLowerCase().includes(q));
+  res.json({members:members.slice(0,50)});
 });
 
 /*
@@ -594,6 +590,8 @@ app.post('/api/games/:id/join', auth, (req, res) => {
   });
 });
 
+app.post('/api/games/:id/leave',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'جلسة اللعبة غير موجودة'});g.playerIds=(g.playerIds||[]).filter(x=>x!==req.user.id);g.status=g.playerIds.length>=g.max?'full':'waiting';if(!g.playerIds.length)g.status='waiting';save();res.json(getPublicGame(g));});
+app.get('/api/games/:id',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'اللعبة غير موجودة'});res.json(getPublicGame(g));});
 /*
  * التقديمات
  */
@@ -688,9 +686,7 @@ app.post(
       });
     }
 
-    const decision = req.body.decision === 'accepted'
-      ? 'accepted'
-      : 'rejected';
+    const decision = req.body.decision === 'accepted' || req.body.accept === true ? 'accepted' : 'rejected';
 
     application.status = decision;
     application.decisionBy = req.user.id;
@@ -862,68 +858,28 @@ app.post(
  * الرسائل الخاصة.
  * المحتوى لا يظهر في لوقات الإداريين العادية.
  */
-app.post(
-  '/api/private-messages',
-  auth,
-  allow('owner'),
-  (req, res) => {
-    const recipientId = String(req.body.recipientId || '').trim();
-    const message = String(req.body.message || '').trim();
-    const title = String(req.body.title || 'رسالة من إدارة ملاذ').trim();
-
-    if (!recipientId || !message) {
-      return res.status(400).json({
-        error: 'حدد المستلم واكتب الرسالة'
-      });
-    }
-
-    const privateMessage = {
-      id: id(),
-      recipientId,
-      senderId: req.user.id,
-      title: title.slice(0, 120),
-      message: message.slice(0, 4000),
-      createdAt: now(),
-      status: 'queued'
-    };
-
-    db.privateMessages.unshift(privateMessage);
-    save();
-
-    audit(
-      'private_message_sent',
-      req.user.id,
-      {
-        messageId: privateMessage.id,
-        recipientId
-      },
-      'owner'
-    );
-
-    res.status(201).json({
-      ...privateMessage,
-      message: undefined
-    });
-  }
-);
-
-app.get(
-  '/api/owner/private-messages',
-  auth,
-  allow('owner'),
-  (req, res) => {
-    res.json(db.privateMessages);
-  }
-);
-
-app.get(
-  '/api/owner/logs',
-  auth,
-  allow('owner'),
-  (req, res) => {
-    res.json(db.logs);
-  }
-);
+app.post('/api/private-messages', auth, (req,res)=>{
+  const recipientId=String(req.body.recipientId||'').trim(), message=String(req.body.message||'').trim(), title=String(req.body.title||'رسالة خاصة').trim();
+  if(!recipientId||!message)return res.status(400).json({error:'حدد المستلم واكتب الرسالة'});
+  if(recipientId===req.user.id)return res.status(400).json({error:'لا يمكنك مراسلة نفسك'});
+  const item={id:id(),recipientId,senderId:req.user.id,title:title.slice(0,120),message:message.slice(0,4000),createdAt:now(),readAt:null};
+  db.privateMessages.unshift(item);db.privateMessages=db.privateMessages.slice(0,5000);save();audit('private_message_sent',req.user.id,{messageId:item.id,recipientId});
+  res.status(201).json({id:item.id,title:item.title,createdAt:item.createdAt});
+});
+app.get('/api/private-messages',auth,(req,res)=>res.json(db.privateMessages.filter(m=>m.senderId===req.user.id||m.recipientId===req.user.id).slice(0,200)));
+app.post('/api/private-messages/:id/read',auth,(req,res)=>{const m=db.privateMessages.find(x=>x.id===req.params.id);if(!m||m.recipientId!==req.user.id)return res.status(404).json({error:'الرسالة غير موجودة'});m.readAt=now();save();res.json({ok:true});});
+app.post('/api/anonymous-messages',optionalAuth,(req,res)=>{
+  const recipientId=String(req.body.recipientId||'').trim(),recipientName=String(req.body.recipientName||'').trim(),message=String(req.body.message||'').trim();
+  if(!message||message.length>4000)return res.status(400).json({error:'اكتب الرسالة بشكل صحيح'});
+  if(!recipientId&&!recipientName)return res.status(400).json({error:'حدد المستلم'});
+  const item={id:id(),recipientId:recipientId||null,recipientName:recipientName.slice(0,120),message:message.slice(0,4000),senderId:req.user?.id||null,senderUsername:req.user?.username||null,createdAt:now(),readAt:null,status:'sent'};
+  db.anonymousMessages.unshift(item);db.anonymousMessages=db.anonymousMessages.slice(0,5000);save();audit('anonymous_message_sent',req.user?.id||null,{messageId:item.id,recipientId:item.recipientId});
+  res.status(201).json({id:item.id,createdAt:item.createdAt});
+});
+app.get('/api/anonymous-messages',auth,(req,res)=>res.json(db.anonymousMessages.filter(m=>m.recipientId===req.user.id||(m.recipientName&&m.recipientName.toLowerCase()===req.user.username.toLowerCase())).map(m=>({id:m.id,recipientName:m.recipientName,message:m.message,createdAt:m.createdAt,readAt:m.readAt})).slice(0,200)));
+app.get('/api/owner/private-messages',auth,allow('owner'),(req,res)=>res.json(db.privateMessages));
+app.get('/api/owner/anonymous-messages',auth,allow('owner'),(req,res)=>res.json(db.anonymousMessages));
+app.get('/api/owner/logs',auth,allow('owner'),(req,res)=>res.json(db.logs));
 
 /*
  * إدارة الإداريين
