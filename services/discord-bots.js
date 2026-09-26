@@ -45,6 +45,15 @@ async function sendButtonDM(userId,content,buttons) {
   const row=new ActionRowBuilder().addComponents(...buttons.map(b=>new ButtonBuilder().setCustomId(b.id).setLabel(b.label).setStyle(b.style)));
   await dm.send({content,components:[row]});
 }
+async function requestOwnerGroupApproval(groupId) {
+  const group=globalThis.mldDiscord.groupHandlers?.getGroup?.(groupId);
+  if(!group) throw new Error('القروب غير موجود');
+  const approver=await resolveApprover();
+  await sendButtonDM(approver.id,`📌 طلب اعتماد قروب جديد: «${group.name}»\nالمالك: ${group.ownerDiscordId}\nهل تعتمد إنشاء قسم القروب ورومه ورْتبته؟`,[
+    {id:`mld:group-approve:yes:${groupId}`,label:'اعتماد',style:ButtonStyle.Success},
+    {id:`mld:group-approve:no:${groupId}`,label:'رفض',style:ButtonStyle.Danger}
+  ]);
+}
 async function requestGroupConfirmation(groupId,discordId) {
   await sendButtonDM(discordId,'هل أنت متأكد من إنشاء القروب؟\nاضغط موافق أو إلغاء.',[
     {id:`mld:group-confirm:yes:${groupId}`,label:'نعم، إنشاء القروب',style:ButtonStyle.Success},
@@ -118,14 +127,17 @@ for (const [name, envName] of definitions) {
     try {
       const [,kind,decision,id]=interaction.customId.split(':');
       if(kind==='group-confirm'){
+        const group=globalThis.mldDiscord.groupHandlers?.getGroup?.(id);
+        if(!group || group.ownerDiscordId!==interaction.user.id) return interaction.reply({content:'هذا التأكيد مخصص لصاحب القروب.',ephemeral:true});
+        await interaction.deferUpdate();
+        await globalThis.mldDiscord.groupHandlers?.confirmGroup(id,interaction.user.id,decision==='yes');
+        await interaction.editReply({content:decision==='yes'?'📨 تم إرسال طلب القروب إلى المالك لاعتماده.':'❌ تم إلغاء إنشاء القروب.',components:[]});
+      } else if(kind==='group-approve'){
         const approver=await resolveApprover();
-        if(interaction.user.id!==approver.id) {
-          if(interaction.deferred||interaction.replied) return;
-          return interaction.reply({content:'هذا الطلب مخصص للمالك.',ephemeral:true});
-        }
+        if(interaction.user.id!==approver.id) return interaction.reply({content:'هذا الطلب مخصص للمالك.',ephemeral:true});
         await interaction.deferUpdate();
         await globalThis.mldDiscord.groupHandlers?.approveGroup(id,decision==='yes');
-        await interaction.editReply({content:decision==='yes'?'✅ تم اعتماد طلب القروب.':'❌ تم إلغاء طلب القروب.',components:[]});
+        await interaction.editReply({content:decision==='yes'?'✅ تم اعتماد القروب وإنشاء موارده.':'❌ تم رفض إنشاء القروب.',components:[]});
       } else if(kind==='join'){
         const group=globalThis.mldDiscord.groupHandlers?.getGroup?.(globalThis.mldDiscord.groupHandlers?.getRequest?.(id)?.groupId);
         if(!group || group.ownerDiscordId!==interaction.user.id) return interaction.reply({content:'هذا الطلب مخصص لمالك القروب.',ephemeral:true});
@@ -169,6 +181,7 @@ globalThis.mldDiscord = {
   sendDM,
   verifyUser,
   requestGroupConfirmation,
+  requestOwnerGroupApproval,
   notifyGroupOwnerJoinRequest,
   createGroupDiscordResources,
   assignGroupRole
