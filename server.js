@@ -935,7 +935,7 @@ app.post(
  * المحتوى لا يظهر في لوقات الإداريين العادية.
  */
 app.post('/api/private-messages', auth, (req,res)=>{
-  const recipientId=String(req.body.recipientId||'').trim(), message=String(req.body.message||'').trim(), title=String(req.body.title||'رسالة خاصة').trim();
+  let recipientId=String(req.body.recipientId||'').trim(), message=String(req.body.message||'').trim(), title=String(req.body.title||'رسالة خاصة').trim();
   if(!recipientId||!message)return res.status(400).json({error:'حدد المستلم واكتب الرسالة'});
   if(recipientId===req.user.id)return res.status(400).json({error:'لا يمكنك مراسلة نفسك'});
   let recipient=getUser(recipientId);
@@ -951,7 +951,7 @@ app.post('/api/private-messages', auth, (req,res)=>{
 });
 app.get('/api/private-messages',auth,(req,res)=>res.json(db.privateMessages.filter(m=>m.senderId===req.user.id||m.recipientId===req.user.id).slice(0,200)));
 app.post('/api/private-messages/:id/read',auth,(req,res)=>{const m=db.privateMessages.find(x=>x.id===req.params.id);if(!m||m.recipientId!==req.user.id)return res.status(404).json({error:'الرسالة غير موجودة'});m.readAt=now();save();res.json({ok:true});});
-app.post('/api/anonymous-messages',optionalAuth,(req,res)=>{
+app.post('/api/anonymous-messages',optionalAuth,async (req,res)=>{
   let recipientId=String(req.body.recipientId||'').trim();
   let recipientName=String(req.body.recipientName||'').trim();
   const message=String(req.body.message||'').trim();
