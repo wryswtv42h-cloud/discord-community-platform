@@ -449,8 +449,12 @@ async function loadPublicData() {
 
     $('#visitCount').textContent = data.visits || 0;
     $('#heroVisits').textContent = `◈ ${data.visits || 0} زيارات`;
-    $('#memberCount').textContent = (data.members || data.onlineMembers || []).length;
-    $('#heroOnline').textContent = `● ${(data.onlineMembers || []).length} أعضاء متصلين`;
+    const memberTotal = (data.members || data.onlineMembers || []).length;
+    const onlineTotal = (data.onlineMembers || []).length;
+    $('#memberCount').textContent = memberTotal;
+    $('#heroMembers').textContent = `👥 ${memberTotal} أعضاء`;
+    $('#heroStatus').textContent = `🟢 الحالة: ${data.serverStatus || 'متصل'}`;
+    $('#heroOnline').textContent = `● ${onlineTotal} أعضاء متصلين`;
     $('#groupsCount').textContent = (data.groups || []).length;
     $('#gamesCount').textContent = (data.games || []).length;
 
@@ -463,7 +467,8 @@ async function loadPublicData() {
     const isStaff = ['owner','admin'].includes(state.me?.role);
     const controlLink = state.me?.role === 'owner' ? '/owner' : '/admin';
     $('#adminNavLink')?.toggleAttribute('hidden', !isStaff);
-    $('#drawerAdminLink')?.toggleAttribute('hidden', !isStaff);
+    $('#drawerAdminLink')?.toggleAttribute('hidden', !(isStaff && state.me?.role === 'admin'));
+    $('#drawerOwnerLink')?.toggleAttribute('hidden', state.me?.role !== 'owner');
     if (isStaff) {
       if ($('#adminNavLink')) $('#adminNavLink').href = controlLink;
       if ($('#drawerAdminLink')) $('#drawerAdminLink').href = controlLink;
@@ -475,6 +480,21 @@ async function loadPublicData() {
   }
 }
 
+function openTicketForm() {
+  if (!state.token) return openAuth('login');
+  openModal(`<form class="modalForm" id="ticketForm"><h2>🎫 فتح تذكرة</h2><p class="subtext">أرسل استفسارك للإدارة.</p><input id="ticketSubject" placeholder="عنوان التذكرة" required><input id="ticketDiscord" placeholder="Discord ID (اختياري)"><textarea id="ticketMessage" placeholder="اكتب تفاصيل المشكلة..." required style="min-height:130px"></textarea><button class="btn" type="submit">إرسال التذكرة</button></form>`);
+  $('#ticketForm').onsubmit=async e=>{e.preventDefault();try{await api('/tickets',{method:'POST',body:{subject:$('#ticketSubject').value,message:$('#ticketMessage').value,discordId:$('#ticketDiscord').value}});closeModal();showToast('تم فتح التذكرة');}catch(err){showToast(err.message)}};
+}
+function openApplicationForm() {
+  if (!state.token) return openAuth('login');
+  openModal(`<form class="modalForm" id="applicationForm"><h2>📝 التقديم للإدارة</h2><p class="subtext">أرسل طلبك وسيظهر للإدارة للمراجعة.</p><input id="applicationDiscordUser" placeholder="اسم Discord"><input id="applicationDiscordId" placeholder="Discord ID (اختياري)"><textarea id="applicationMessage" placeholder="لماذا تريد الانضمام للإدارة؟" required style="min-height:150px"></textarea><button class="btn" type="submit">إرسال التقديم</button></form>`);
+  $('#applicationForm').onsubmit=async e=>{e.preventDefault();try{await api('/admin/applications',{method:'POST',body:{discordUsername:$('#applicationDiscordUser').value,discordId:$('#applicationDiscordId').value,message:$('#applicationMessage').value,type:'staff'}});closeModal();showToast('تم إرسال التقديم للإدارة');}catch(err){showToast(err.message)}};
+}
+function handleDrawerAction(action){
+  if(action==='ticket') return openTicketForm();
+  if(action==='application') return openApplicationForm();
+  if(action==='auth') return openAuth(state.me?'login':'login');
+}
 function bindEvents() {
   $('#searchMemberBtn').addEventListener('click', () => {
     state.memberQuery = $('#memberSearchInput').value;
@@ -487,6 +507,7 @@ function bindEvents() {
   });
 
   $('#newGroupBtn').addEventListener('click', createGroup);
+  $('[data-drawer-action]').forEach((el)=>el.addEventListener('click',(e)=>{e.preventDefault();handleDrawerAction(el.dataset.drawerAction);}));
   $('#createGroupBtn').addEventListener('click', createGroup);
   $('#newGameBtn').addEventListener('click', createGame);
   $('#addRatingBtn')?.addEventListener('click', addRating);
