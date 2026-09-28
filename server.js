@@ -16,7 +16,6 @@ fs.mkdirSync(dataDir, { recursive: true });
 const defaults = {
   users: [],
   groups: [],
-  games: [],
   ratings: [],
   logs: [],
   applications: [],
@@ -49,6 +48,9 @@ for (const key of Object.keys(defaults)) {
     db[key] = structuredClone(defaults[key]);
   }
 }
+
+// Remove legacy custom game sessions/data. The arcade now uses ready-made static games.
+if (Array.isArray(db.games)) { db.games = []; save(); }
 
 const save = () => {
   fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
@@ -167,15 +169,6 @@ function getPublicGroup(group) {
   };
 }
 
-function getPublicGame(game) {
-  return {
-    ...game,
-    players: (game.playerIds || [])
-      .map((playerId) => getUser(playerId))
-      .filter(Boolean)
-      .map((user) => user.username)
-  };
-}
 
 /*
  * إنشاء حساب المالك أول مرة.
@@ -464,7 +457,6 @@ app.get('/api/public', async (req, res) => {
     onlineMembers: members.slice(0,100),
     members: members.slice(0,100),
     groups: publicGroups,
-    games: publicGames,
     ratings: db.ratings.slice(0,12),
     leaderboard: db.users.filter(u=>u.role!=='system').sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,20).map(safeUser)
   });
@@ -580,94 +572,6 @@ app.get('/api/groups/:id', auth, (req,res)=>{
   res.json(getPublicGroup(group));
 });
 
-/*
- * الألعاب
- */
-app.post('/api/games', auth, (req, res) => {
-  const title = String(req.body.title || '').trim();
-  const type = ['uno','ludo','baloot','qawsar','custom'].includes(req.body.type) ? req.body.type : 'custom';
-  const min = Math.max(1, Math.min(16, Number(req.body.min || 2)));
-  const max = Math.max(min, Math.min(16, Number(req.body.max || 4)));
-  const visibility = req.body.visibility === 'private' ? 'private' : 'public';
-
-  if (!title || title.length > 100) {
-    return res.status(400).json({
-      error: 'اسم اللعبة غير صحيح'
-    });
-  }
-
-  const game = {
-    id: id(),
-    title,
-    type,
-    min,
-    max,
-    visibility,
-    state: { phase:'lobby', turn:null, moves:[] },
-    playerIds: [req.user.id],
-    status: 'waiting',
-    createdBy: req.user.id,
-    createdAt: now()
-  };
-
-  db.games.unshift(game);
-  save();
-  audit('game_created', req.user.id, { gameId: game.id });
-
-  res.status(201).json(getPublicGame(game));
-});
-
-app.post('/api/games/:id/join', auth, (req, res) => {
-  const game = db.games.find((entry) => entry.id === req.params.id);
-
-  if (!game || game.status !== 'waiting') {
-    return res.status(404).json({
-      error: 'جلسة اللعبة غير موجودة'
-    });
-  }
-
-  if (!game.playerIds.includes(req.user.id)) {
-    if (game.playerIds.length >= game.max) {
-      return res.status(409).json({
-        error: 'الجلسة ممتلئة'
-      });
-    }
-
-    game.playerIds.push(req.user.id);
-  }
-
-  if (game.playerIds.length >= game.max) {
-    game.status = 'full';
-  }
-
-  save();
-  audit('game_joined', req.user.id, { gameId: game.id });
-
-  res.json({
-    ...getPublicGame(game),
-    botAdded: false
-  });
-});
-
-app.post('/api/games/:id/leave',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'جلسة اللعبة غير موجودة'});g.playerIds=(g.playerIds||[]).filter(x=>x!==req.user.id);g.status=g.playerIds.length>=g.max?'full':'waiting';if(!g.playerIds.length)g.status='waiting';save();res.json(getPublicGame(g));});
-app.get('/api/games/:id',auth,(req,res)=>{const g=db.games.find(x=>x.id===req.params.id);if(!g)return res.status(404).json({error:'اللعبة غير موجودة'});res.json(getPublicGame(g));});
-app.post('/api/games/:id/start',auth,(req,res)=>{
- const g=db.games.find(x=>x.id===req.params.id);
- if(!g)return res.status(404).json({error:'اللعبة غير موجودة'});
- if(g.createdBy!==req.user.id&&!['owner','admin'].includes(req.user.role))return res.status(403).json({error:'ليس لديك صلاحية بدء الجلسة'});
- if((g.playerIds||[]).length<g.min)return res.status(409).json({error:'عدد اللاعبين غير كافٍ'});
- g.status='playing';g.state={...(g.state||{}),phase:'playing',turn:g.playerIds[0],moves:g.state?.moves||[]};save();audit('game_started',req.user.id,{gameId:g.id});res.json(getPublicGame(g));
-});
-app.post('/api/games/:id/move',auth,(req,res)=>{
- const g=db.games.find(x=>x.id===req.params.id);
- if(!g||g.status!=='playing')return res.status(409).json({error:'اللعبة ليست قيد اللعب'});
- if(!(g.playerIds||[]).includes(req.user.id))return res.status(403).json({error:'أنت لست لاعبًا'});
- if(g.state?.turn&&g.state.turn!==req.user.id)return res.status(409).json({error:'ليس دورك الآن'});
- const move=String(req.body.move||'').trim().slice(0,500);if(!move)return res.status(400).json({error:'الحركة غير صالحة'});
- const i=g.playerIds.indexOf(req.user.id),next=g.playerIds[(i+1)%g.playerIds.length];
- g.state={...(g.state||{}),phase:'playing',turn:next,moves:[...(g.state?.moves||[]),{by:req.user.id,move,at:now()}].slice(-200)};
- save();audit('game_move',req.user.id,{gameId:g.id});res.json(getPublicGame(g));
-});
 /*
  * التقديمات
  */
@@ -1078,7 +982,7 @@ app.get('/api/admin/groups',auth,allow('owner','admin'),(req,res)=>res.json(db.g
 app.get('/api/owner/groups',auth,allow('owner'),(req,res)=>res.json(db.groups.map(g=>({...getPublicGroup(g),owner:getUser(g.ownerId)?.username||'',status:g.status,discord:g.discord||null}))));
 app.get('/api/owner/group-join-requests',auth,allow('owner'),(req,res)=>res.json(db.groupJoinRequests||[]));
 app.get('/api/admin/stats',auth,allow('owner','admin'),(req,res)=>res.json({
-  users:db.users.length,groups:db.groups.length,games:db.games.length,ratings:db.ratings.length,
+  users:db.users.length,groups:db.groups.length,ratings:db.ratings.length,
   tickets:db.tickets.length,applications:db.applications.length,privateMessages:db.privateMessages.length,
   anonymousMessages:(db.anonymousMessages||[]).length,visits:db.stats.visits
 }));
