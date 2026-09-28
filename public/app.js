@@ -232,20 +232,35 @@ function renderGroups(groups = []) {
   });
 }
 
-function renderGames(games = []) {
+function renderGames() {
   const list = $('#gamesList');
   if (!list) return;
-  if (!games.length) { list.innerHTML = '<div class="emptyState">لا توجد جلسات الآن — افتح أول جلسة!</div>'; return; }
-  const labels={uno:'UNO',ludo:'لودو',baloot:'بلوت',qawsar:'قوسر',custom:'مخصصة'};
-  list.innerHTML=games.map(game=>{
-    const count=Array.isArray(game.players)?game.players.length:0;
-    const status=game.status==='playing'?'🔥 قيد اللعب':game.status==='full'?'ممتلئة':'انتظار';
-    const join=count<(game.max||4)&&game.status!=='playing';
-    return `<div class="gameCard"><span class="cardPill">🎮 ${escapeHtml(labels[game.type]||game.type||'جلسة')} · ${status}</span><h3>${escapeHtml(game.title)}</h3><p>اللاعبون ${count}/${game.max||4} · الحد الأدنى ${game.min||2}</p><div class="cardMeta">${(game.players||[]).map(u=>`<span>${escapeHtml(u)}</span>`).join('')||'<span>بانتظار اللاعبين</span>'}</div><div class="cardActions">${join?`<button class="btn" data-game-join="${game.id}">انضمام</button>`:''}${state.me&&game.createdBy===state.me.id&&game.status!=='playing'?`<button class="btn ghost" data-game-start="${game.id}">بدء</button>`:''}${state.me&&(game.players||[]).includes(state.me.username)&&game.status==='playing'?'<button class="btn ghost" data-game-move="'+game.id+'">حركة</button>':''}</div></div>`;
-  }).join('');
-  $('[data-game-join]').forEach(b=>b.onclick=()=>joinGame(b.dataset.gameJoin));
-  $('[data-game-start]').forEach(b=>b.onclick=async()=>{try{await api('/games/'+b.dataset.gameStart+'/start',{method:'POST'});showToast('بدأت اللعبة');loadPublicData()}catch(e){showToast(e.message)}});
-  $('[data-game-move]').forEach(b=>b.onclick=async()=>{const move=prompt('اكتب الحركة');if(!move)return;try{await api('/games/'+b.dataset.gameMove+'/move',{method:'POST',body:{move}});loadPublicData()}catch(e){showToast(e.message)}});
+  const games = [
+    {name:'2048',icon:'🔢',desc:'ألغاز دمج الأرقام — العب وسجّل رقمك القياسي.',path:'/games/2048.html'},
+    {name:'Snake',icon:'🐍',desc:'الثعبان الكلاسيكي مع تحكم باللمس والجوال.',path:'/games/snake.html'},
+    {name:'Tetris',icon:'🧱',desc:'رتّب القطع وامسح الصفوف وارفع المستوى.',path:'/games/tetris.html'},
+    {name:'Sudoku',icon:'🧩',desc:'سودوكو بثلاث درجات صعوبة مع فحص وحل.',path:'/games/sudoku.html'},
+    {name:'Connect Four',icon:'🔴',desc:'أربع متتالية ضد الذكاء الاصطناعي أو لاعب ثانٍ.',path:'/games/connect-four.html'},
+    {name:'Tic-Tac-Toe',icon:'❌',desc:'إكس أو ضد الذكاء الاصطناعي أو لاعبين.',path:'/games/tic-tac-toe.html'}
+  ];
+  list.innerHTML = games.map(game => `
+    <article class="gameCard readyGameCard">
+      <span class="cardPill">${game.icon} لعبة جاهزة</span>
+      <h3>${escapeHtml(game.name)}</h3>
+      <p>${escapeHtml(game.desc)}</p>
+      <div class="cardActions"><button class="btn" type="button" data-ready-game="${game.path}">🎮 العب الآن</button></div>
+    </article>`).join('');
+  $('[data-ready-game]').forEach(button => button.addEventListener('click', () => openReadyGame(button.dataset.readyGame)));
+}
+
+function openReadyGame(path) {
+  const title = path.split('/').pop().replace('.html','');
+  openModal(`
+    <div class="gameLauncher">
+      <div class="gameLauncherHead"><div><span class="cardPill">🎮 لعبة جاهزة</span><h2>${escapeHtml(title)}</h2></div><button class="btn ghost" type="button" data-close-game>إغلاق</button></div>
+      <iframe class="gameFrame" src="${escapeHtml(path)}" title="${escapeHtml(title)}" loading="eager" allow="fullscreen"></iframe>
+    </div>`);
+  $('[data-close-game]')?.addEventListener('click', closeModal);
 }
 
 async function sendPrivateMessage(){
@@ -361,24 +376,6 @@ async function createGroup() {
   } catch(error){showToast(error.message);}
 }
 
-async function createGame() {
-  if (!state.token) return openAuth('login');
-
-  const title = prompt('اسم اللعبة', 'جلسة جديدة');
-  if (!title) return;
-  const typeInput=prompt('نوع اللعبة: uno / ludo / baloot / qawsar / custom','uno')||'custom';
-  const type=['uno','ludo','baloot','qawsar','custom'].includes(typeInput.toLowerCase())?typeInput.toLowerCase():'custom';
-  const min = Number(prompt('الحد الأدنى للعب', '2')) || 2;
-  const max = Number(prompt('الحد الأقصى للعب', '4')) || 4;
-  try {
-    await api('/games', { method: 'POST', body: { title, type, min, max, visibility: 'public' } });
-    showToast('تم فتح الجلسة');
-    await loadPublicData();
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
 async function joinGroup(groupId) {
   if (!state.token) return openAuth('login');
 
@@ -386,18 +383,6 @@ async function joinGroup(groupId) {
     await api(`/groups/${groupId}/join`, { method: 'POST' });
     showToast('تم إرسال طلب الانضمام');
     closeModal();
-    await loadPublicData();
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function joinGame(gameId) {
-  if (!state.token) return openAuth('login');
-
-  try {
-    const result = await api(`/games/${gameId}/join`, { method: 'POST' });
-    showToast(result.botAdded ? 'لعبت مع البوت لأن الجلسة لم تكتمل' : 'تم الانضمام للجلسة');
     await loadPublicData();
   } catch (error) {
     showToast(error.message);
@@ -456,11 +441,11 @@ async function loadPublicData() {
     $('#heroStatus').textContent = `🟢 الحالة: ${data.serverStatus || 'متصل'}`;
     $('#heroOnline').textContent = `● ${onlineTotal} أعضاء متصلين`;
     $('#groupsCount').textContent = (data.groups || []).length;
-    $('#gamesCount').textContent = (data.games || []).length;
+    $('#gamesCount').textContent = 6;
 
     renderMemberList(data.members || data.onlineMembers || []);
     renderGroups(data.groups || []);
-    renderGames(data.games || []);
+    renderGames();
     renderRatings(data.ratings || []);
     renderLeaderboard(data.leaderboard || []);
     renderAuth();
@@ -509,8 +494,7 @@ function bindEvents() {
   $('#newGroupBtn').addEventListener('click', createGroup);
   $('[data-drawer-action]').forEach((el)=>el.addEventListener('click',(e)=>{e.preventDefault();handleDrawerAction(el.dataset.drawerAction);}));
   $('#createGroupBtn').addEventListener('click', createGroup);
-  $('#newGameBtn').addEventListener('click', createGame);
-  $('#addRatingBtn')?.addEventListener('click', addRating);
+    $('#addRatingBtn')?.addEventListener('click', addRating);
   $('#cinemaOpen')?.addEventListener('click', openCinema);
   $('#downloadForm')?.addEventListener('submit', submitDownload);
 
