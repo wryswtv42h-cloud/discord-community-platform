@@ -164,3 +164,7 @@
 .platformDrawer .drawerMenuGroup>b{display:block;color:var(--soft);font-size:11px;margin:0 4px 7px}
 .platformDrawer .drawerMenuGroup a{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:12px}
 .platformDrawer .drawerMenuGroup a:hover{background:rgba(169,89,180,.18);color:#fff}
+
+/* Ready-made game arcade */
+.readyGameCard{min-height:190px}.gameLauncher{width:min(1100px,96vw)}.gameLauncherHead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}.gameLauncherHead h2{margin:8px 0 0}.gameFrame{display:block;width:100%;height:min(78vh,760px);border:1px solid rgba(255,255,255,.12);border-radius:14px;background:#0f172a}.gameLauncher .cardPill{display:inline-flex}
+@media(max-width:700px){.gameFrame{height:72vh}.gameLauncherHead h2{font-size:20px}}
