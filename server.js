@@ -448,7 +448,6 @@ app.post('/api/visit', (req, res) => {
 
 app.get('/api/public', async (req, res) => {
   const publicGroups = db.groups.filter((group) => group.status === 'open').map(getPublicGroup);
-  const publicGames = db.games.filter((game) => ['waiting','full','playing'].includes(game.status)).map(getPublicGame);
   let members = [];
   try { members = await (globalThis.mldDiscord?.getMembers?.() || Promise.resolve([])); } catch (error) { console.error('Discord members:', error.message); }
   if (!members.length) members = db.users.map((user) => ({ id:user.id,name:user.username,username:user.username,avatar:user.avatar||'/server-avatar.svg',status:'online',role:user.role }));
