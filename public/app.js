@@ -275,13 +275,37 @@ async function openGameRoom(id){
  try{const s=await api('/game-sessions/'+id);showGameRoom(s);}catch(e){showToast(e.message)}
 }
 function showGameRoom(s){
- const game=gameCatalogData().find(g=>g.id===s.game)||gameCatalogData()[0];const mine=state.me?.id;const myPlayer=s.players.find(p=>p.id===mine);const isHost=s.hostId===mine;
- openModal('<div class="gameRoom tone-'+game.tone+'"><div class="gameRoomHead"><div><span class="cardPill">'+game.icon+' '+game.name+'</span><h2>'+escapeHtml(s.name)+'</h2><p class="subtext">كود الجلسة: <b>'+escapeHtml(s.code)+'</b></p></div><button class="btn ghost" data-close-game>إغلاق</button></div><div class="roomLayout"><div class="boardStage"><div class="virtualBoard"><div class="boardLogo">'+game.icon+'<small>'+game.name+'</small></div><div class="turnBanner"> '+escapeHtml(s.state.lastAction||'الجلسة جاهزة')+'</div><div class="turnGrid">'+s.players.map((p,i)=>'<div class="turnSeat '+(s.state.turn===i?'current':'')+'"><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><b>'+escapeHtml(p.username)+'</b><small>'+(s.state.turn===i?'دورك الآن':'انتظر الدور')+'</small></div>').join('')+'</div><div class="boardActions">'+(s.status==='lobby'&&isHost?'<button class="btn" data-start-session>🚀 ابدأ اللعب</button>':'')+(s.status==='playing'&&myPlayer?'<button class="btn" data-game-action="roll">🎲 حركة</button>':'')+'<button class="btn ghost" data-leave-session>خروج</button></div></div></div><aside class="roomSide"><h3>👥 اللاعبين</h3><div class="roomPlayers">'+s.players.map(p=>'<div><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><span>'+escapeHtml(p.username)+'</span>'+(p.id===s.hostId?'<b>👑</b>':'')+'</div>').join('')+'</div><h3>👁️ المشاهدون</h3><p class="subtext">'+s.spectators.length+' مشاهد</p><div class="roomChat">'+s.chat.map(c=>'<p><b>'+escapeHtml(c.user)+':</b> '+escapeHtml(c.text)+'</p>').join('')+'</div><div class="chatSend"><input id="gameChatText" maxlength="300" placeholder="اكتب في شات الجلسة..."><button class="btn" data-send-game-chat>إرسال</button></div></aside></div></div>');
- $('#closeGame')?.addEventListener('click',closeModal);$('[data-close-game]')?.addEventListener('click',closeModal);
- $('[data-start-session]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/start',{method:'POST',body:{}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
- $('[data-leave-session]')?.addEventListener('click',async()=>{try{await api('/game-sessions/'+s.id+'/leave',{method:'POST',body:{}});closeModal();loadGameSessions()}catch(e){showToast(e.message)}});
- $('[data-game-action]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/action',{method:'POST',body:{action:'roll'}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
- $('[data-send-game-chat]')?.addEventListener('click',async()=>{const t=$('#gameChatText')?.value.trim();if(!t)return;try{await api('/game-sessions/'+s.id+'/chat',{method:'POST',body:{text:t}});const x=await api('/game-sessions/'+s.id);showGameRoom(x)}catch(e){showToast(e.message)}});
+  const game=gameCatalogData().find(g=>g.id===s.game)||gameCatalogData()[0];
+  const mine=state.me?.id;
+  const myPlayer=s.players.find(p=>p.id===mine);
+  const isHost=s.hostId===mine;
+  const st=s.state||{};
+  let controls='';
+  if(s.status==='lobby'&&isHost) controls='<button class="btn" data-start-session>🚀 ابدأ اللعب</button>';
+  if(s.status==='playing'&&myPlayer){
+    if(s.game==='uno') controls='<button class="btn" data-game-action="draw">🃏 سحب كرت</button>';
+    else if(s.game==='ludo'||s.game==='jakaro') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button><div class="pieceButtons">'+[0,1,2,3].map(i=>'<button class="btn ghost" data-game-action="piece:'+i+'">قطعة '+(i+1)+'</button>').join('')+'</div>';
+    else if(s.game==='monopoly'||s.game==='maqosar') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button><button class="btn ghost" data-game-action="buy">🏠 شراء</button>';
+    else controls='<button class="btn" data-game-action="roll">🃏 لعب الدور</button>';
+  }
+  const hand=(myPlayer&&st.hands&&st.hands[mine])||[];
+  const handHtml=s.game==='uno'&&myPlayer&&s.status==='playing'?'<div class="cardHand">'+hand.map((card,i)=>'<button class="playCard" data-game-action="play:'+i+'">'+escapeHtml((card.c||'')+' '+(card.n||''))+'</button>').join('')+'</div>':'';
+  const stats=s.players.map(p=>{
+    const cash=st.cash?.[p.id];
+    const pos=st.positions?.[p.id];
+    const pieces=st.pieces?.[p.id];
+    const handCount=st.hands?.[p.id]?.length;
+    return '<div class="playerStat"><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><b>'+escapeHtml(p.username)+'</b>'+(p.id===s.hostId?' 👑':'')+(cash!==undefined?'<small>💰 '+cash+'</small>':'')+(pos!==undefined?'<small>📍 '+pos+'</small>':'')+(pieces?'<small>🎯 '+pieces.join(' · ')+'</small>':'')+(handCount!==undefined?'<small>🃏 '+handCount+' كروت</small>':'')+'</div>';
+  }).join('');
+  openModal('<div class="gameRoom tone-'+game.tone+'"><div class="gameRoomHead"><div><span class="cardPill">'+game.icon+' '+game.name+'</span><h2>'+escapeHtml(s.name)+'</h2><p class="subtext">كود الجلسة: <b>'+escapeHtml(s.code)+'</b> · '+(s.status==='playing'?'قيد اللعب':'انتظار اللاعبين')+'</p></div><button class="btn ghost" data-close-game>إغلاق</button></div><div class="roomLayout"><div class="boardStage"><div class="virtualBoard"><div class="boardLogo">'+game.icon+'<small>'+game.name+'</small></div><div class="turnBanner">'+escapeHtml(st.lastAction||'الجلسة جاهزة')+'</div><div class="turnGrid">'+s.players.map((p,i)=>'<div class="turnSeat '+(st.turn===i?'current':'')+'"><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><b>'+escapeHtml(p.username)+'</b><small>'+(st.turn===i?'دوره الآن':'انتظر')+'</small></div>').join('')+'</div><div class="boardCenter">'+(st.dice?'<div class="diceFace">🎲 '+st.dice+'</div>':'')+(st.winner?'<div class="winnerBanner">🏆 الفائز: '+escapeHtml(s.players.find(p=>p.id===st.winner)?.username||'')+'</div>':'')+handHtml+'<div class="boardActions">'+controls+'<button class="btn ghost" data-leave-session>خروج</button></div></div></div></div><aside class="roomSide"><h3>👥 اللاعبين</h3><div class="roomPlayers">'+stats+'</div><h3>👁️ المشاهدون</h3><p class="subtext">'+s.spectators.length+' مشاهد</p><div class="roomChat">'+s.chat.map(c=>'<p><b>'+escapeHtml(c.user)+':</b> '+escapeHtml(c.text)+'</p>').join('')+'</div><div class="chatSend"><input id="gameChatText" maxlength="300" placeholder="اكتب في شات الجلسة..."><button class="btn" data-send-game-chat>إرسال</button></div></aside></div></div>');
+  $('[data-close-game]')?.addEventListener('click',closeModal);
+  $('[data-start-session]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/start',{method:'POST',body:{}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
+  $$('[data-game-action]').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{const x=await api('/game-sessions/'+s.id+'/action',{method:'POST',body:{action:btn.dataset.gameAction}});showGameRoom(x);loadGameSessions();}
+    catch(e){showToast(e.message)}
+  }));
+  $('[data-leave-session]')?.addEventListener('click',async()=>{try{await api('/game-sessions/'+s.id+'/leave',{method:'POST',body:{}});closeModal();loadGameSessions()}catch(e){showToast(e.message)}});
+  $('[data-send-game-chat]')?.addEventListener('click',async()=>{const t=$('#gameChatText')?.value.trim();if(!t)return;try{await api('/game-sessions/'+s.id+'/chat',{method:'POST',body:{text:t}});showGameRoom(await api('/game-sessions/'+s.id))}catch(e){showToast(e.message)}});
 }
 
 let currentJoke=null,currentStory='';
