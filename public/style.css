@@ -711,3 +711,31 @@ header {
 .ratingSlide .ratingCard{min-width:0}
 @keyframes mldRatingCycle{to{transform:translateX(-5300%)}} 
 @media(max-width:700px){.ratingSlide{grid-template-columns:1fr}.ratingTrack{animation-duration:162s}.socialFooter a{min-width:140px}.menuLeft{left:12px;top:12px}.socialDock{right:12px;bottom:12px}.socialCircle{width:52px;height:52px}}
+
+/* MLD yesterday-style navigation: permanent sidebar is replaced by the top-left folder menu. */
+.sidebar{display:none!important}
+.main{margin-right:0!important}
+header{justify-content:flex-start;direction:ltr}
+header .breadcrumb{direction:rtl}
+header .headerActions{margin-left:auto;direction:rtl}
+.menuLeft{order:-1;margin-right:auto}
+.platformDrawer{
+  position:fixed;inset:0 auto 0 0;width:min(360px,92vw);padding:18px;
+  background:linear-gradient(180deg,rgba(12,16,24,.99),rgba(18,22,31,.98));
+  border-right:1px solid var(--line);box-shadow:24px 0 70px rgba(0,0,0,.4);
+  transform:translateX(-105%);transition:transform .24s ease;z-index:200;overflow:auto;
+}
+.platformDrawer.open{transform:translateX(0)}
+.platformDrawer::after{content:"";position:fixed;inset:0 auto 0 100%;width:calc(100vw - min(360px,92vw));background:rgba(0,0,0,.28);pointer-events:none}
+.drawerHead{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 18px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.drawerHead strong{font-size:20px}
+.drawerFolder{border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0}
+.drawerFolderTitle{width:100%;border:0;background:none;color:var(--text);text-align:right;padding:13px 8px;font-weight:800;cursor:pointer}
+.drawerFolderItems{display:grid;gap:4px;padding:0 8px 10px}
+.drawerFolderItems a{display:block;text-decoration:none;color:var(--muted);padding:9px 10px;border-radius:10px}
+.drawerFolderItems a:hover{background:rgba(255,255,255,.05);color:var(--text)}
+@media(max-width:900px){
+  header{height:64px;padding:0 4%}
+  .breadcrumb{display:none}
+  .page{padding-top:20px}
+}
