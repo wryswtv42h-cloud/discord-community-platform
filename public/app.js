@@ -136,39 +136,62 @@ function openAuth(mode = 'login') {
   openModal(`
     <form class="modalForm" id="authForm">
       <h2>${isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'}</h2>
-      <p class="subtext">${isLogin ? 'أدخل بياناتك للدخول إلى القروبات والألعاب.' : 'أنشئ حسابك الآن للانضمام إلى المجتمع.'}</p>
-      <input id="authUser" type="text" placeholder="اسم المستخدم" required />
-      <input id="authPass" type="password" placeholder="كلمة المرور" required />
-      <button class="btn" type="submit">${isLogin ? 'دخول' : 'إنشاء الحساب'}</button>
+      <p class="subtext">${isLogin ? 'ادخل بياناتك للوصول إلى حسابك ومزايا المجتمع.' : 'اختر اسمك من الاقتراحات أو اكتب اسمًا جديدًا.'}</p>
+      <input id="authUser" type="text" maxlength="24" placeholder="اسم المستخدم" autocomplete="username" required />
+      ${!isLogin ? '<div id="registerSuggestions" class="registerSuggestions"></div><div id="registerHint" class="subtext">الاقتراحات مأخوذة من الأعضاء الموجودين حاليًا.</div>' : ''}
+      <input id="authPass" type="password" placeholder="كلمة المرور" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required />
+      <button class="btn" type="submit">${isLogin ? 'دخول' : 'متابعة'}</button>
       <div class="switchLink" data-auth-switch="${isLogin ? 'register' : 'login'}">${isLogin ? 'مستخدم جديد؟ إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول'}</div>
     </form>
   `);
+
+  if (!isLogin) {
+    const source = (state.publicData?.members || state.publicData?.onlineMembers || [])
+      .map(m => typeof m === 'string' ? m : (m.username || m.name || ''))
+      .filter(Boolean);
+    const unique = [...new Set(source)].slice(0, 8);
+    const suggestions = $('#registerSuggestions');
+    if (suggestions) {
+      suggestions.innerHTML = unique.map(name => '<button type="button" class="suggestionChip" data-suggestion="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>').join('');
+      $$('[data-suggestion]').forEach(btn => btn.addEventListener('click', () => { $('#authUser').value = btn.dataset.suggestion; }));
+    }
+  }
 
   $('#authForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const username = $('#authUser').value.trim();
     const password = $('#authPass').value;
 
-    try {
-      const result = await api(`/auth/${mode}`, { method: 'POST', body: { username, password } });
-      state.token = result.token;
-      state.me = result.user;
-      localStorage.setItem('token', result.token);
-      renderAuth();
-      closeModal();
-      loadPublicData();
-      showToast('تم تسجيل الدخول بنجاح');
-    } catch (error) {
-      showToast(error.message);
+    if (!isLogin) {
+      if (!/^[\\w\\u0600-\\u06ff-]{3,24}$/u.test(username)) return showToast('اسم المستخدم يجب أن يكون بين 3 و24 حرفًا');
+      if (password.length < 6) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      const box = $('#authForm');
+      box.innerHTML = `
+        <h2>تأكيد إنشاء الحساب</h2>
+        <p class="subtext">راجع بياناتك قبل الإنشاء.</p>
+        <div class="confirmBox"><b>اسم المستخدم</b><div style="margin-top:6px;font-size:18px">${escapeHtml(username)}</div><small class="subtext">سيتم إنشاء الحساب فقط إذا ضغطت «نعم».</small></div>
+        <div class="confirmActions"><button class="btn" type="button" id="confirmRegisterYes">نعم، أنشئ الحساب</button><button class="btn ghost" type="button" id="confirmRegisterNo">لا، رجوع</button></div>
+      `;
+      $('#confirmRegisterNo').onclick = () => openAuth('register');
+      $('#confirmRegisterYes').onclick = async () => {
+        try {
+          const result = await api('/auth/register', { method: 'POST', body: { username, password } });
+          state.token = result.token; state.me = result.user; localStorage.setItem('token', result.token);
+          renderAuth(); closeModal(); await loadPublicData(); showToast('تم إنشاء الحساب');
+        } catch (error) { showToast(error.message); }
+      };
+      return;
     }
+
+    try {
+      const result = await api('/auth/login', { method: 'POST', body: { username, password } });
+      state.token = result.token; state.me = result.user; localStorage.setItem('token', result.token);
+      renderAuth(); closeModal(); await loadPublicData(); showToast('تم تسجيل الدخول بنجاح');
+    } catch (error) { showToast(error.message); }
   });
 
-  $('[data-auth-switch]')?.addEventListener('click', () => {
-    const switchTo = $('[data-auth-switch]').dataset.authSwitch;
-    openAuth(switchTo);
-  });
+  $('[data-auth-switch]')?.addEventListener('click', () => openAuth($('[data-auth-switch]').dataset.authSwitch));
 }
-
 function logout() {
   state.token = '';
   state.me = null;
