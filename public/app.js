@@ -136,62 +136,39 @@ function openAuth(mode = 'login') {
   openModal(`
     <form class="modalForm" id="authForm">
       <h2>${isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'}</h2>
-      <p class="subtext">${isLogin ? 'ادخل بياناتك للوصول إلى حسابك ومزايا المجتمع.' : 'اختر اسمك من الاقتراحات أو اكتب اسمًا جديدًا.'}</p>
-      <input id="authUser" type="text" maxlength="24" placeholder="اسم المستخدم" autocomplete="username" required />
-      ${!isLogin ? '<div id="registerSuggestions" class="registerSuggestions"></div><div id="registerHint" class="subtext">الاقتراحات مأخوذة من الأعضاء الموجودين حاليًا.</div>' : ''}
-      <input id="authPass" type="password" placeholder="كلمة المرور" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required />
-      <button class="btn" type="submit">${isLogin ? 'دخول' : 'متابعة'}</button>
+      <p class="subtext">${isLogin ? 'أدخل بياناتك للدخول إلى القروبات والألعاب.' : 'أنشئ حسابك الآن للانضمام إلى المجتمع.'}</p>
+      <input id="authUser" type="text" placeholder="اسم المستخدم" required />
+      <input id="authPass" type="password" placeholder="كلمة المرور" required />
+      <button class="btn" type="submit">${isLogin ? 'دخول' : 'إنشاء الحساب'}</button>
       <div class="switchLink" data-auth-switch="${isLogin ? 'register' : 'login'}">${isLogin ? 'مستخدم جديد؟ إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول'}</div>
     </form>
   `);
-
-  if (!isLogin) {
-    const source = (state.publicData?.members || state.publicData?.onlineMembers || [])
-      .map(m => typeof m === 'string' ? m : (m.username || m.name || ''))
-      .filter(Boolean);
-    const unique = [...new Set(source)].slice(0, 8);
-    const suggestions = $('#registerSuggestions');
-    if (suggestions) {
-      suggestions.innerHTML = unique.map(name => '<button type="button" class="suggestionChip" data-suggestion="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>').join('');
-      $$('[data-suggestion]').forEach(btn => btn.addEventListener('click', () => { $('#authUser').value = btn.dataset.suggestion; }));
-    }
-  }
 
   $('#authForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const username = $('#authUser').value.trim();
     const password = $('#authPass').value;
 
-    if (!isLogin) {
-      if (!/^[\\w\\u0600-\\u06ff-]{3,24}$/u.test(username)) return showToast('اسم المستخدم يجب أن يكون بين 3 و24 حرفًا');
-      if (password.length < 6) return showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      const box = $('#authForm');
-      box.innerHTML = `
-        <h2>تأكيد إنشاء الحساب</h2>
-        <p class="subtext">راجع بياناتك قبل الإنشاء.</p>
-        <div class="confirmBox"><b>اسم المستخدم</b><div style="margin-top:6px;font-size:18px">${escapeHtml(username)}</div><small class="subtext">سيتم إنشاء الحساب فقط إذا ضغطت «نعم».</small></div>
-        <div class="confirmActions"><button class="btn" type="button" id="confirmRegisterYes">نعم، أنشئ الحساب</button><button class="btn ghost" type="button" id="confirmRegisterNo">لا، رجوع</button></div>
-      `;
-      $('#confirmRegisterNo').onclick = () => openAuth('register');
-      $('#confirmRegisterYes').onclick = async () => {
-        try {
-          const result = await api('/auth/register', { method: 'POST', body: { username, password } });
-          state.token = result.token; state.me = result.user; localStorage.setItem('token', result.token);
-          renderAuth(); closeModal(); await loadPublicData(); showToast('تم إنشاء الحساب');
-        } catch (error) { showToast(error.message); }
-      };
-      return;
-    }
-
     try {
-      const result = await api('/auth/login', { method: 'POST', body: { username, password } });
-      state.token = result.token; state.me = result.user; localStorage.setItem('token', result.token);
-      renderAuth(); closeModal(); await loadPublicData(); showToast('تم تسجيل الدخول بنجاح');
-    } catch (error) { showToast(error.message); }
+      const result = await api(`/auth/${mode}`, { method: 'POST', body: { username, password } });
+      state.token = result.token;
+      state.me = result.user;
+      localStorage.setItem('token', result.token);
+      renderAuth();
+      closeModal();
+      loadPublicData();
+      showToast('تم تسجيل الدخول بنجاح');
+    } catch (error) {
+      showToast(error.message);
+    }
   });
 
-  $('[data-auth-switch]')?.addEventListener('click', () => openAuth($('[data-auth-switch]').dataset.authSwitch));
+  $('[data-auth-switch]')?.addEventListener('click', () => {
+    const switchTo = $('[data-auth-switch]').dataset.authSwitch;
+    openAuth(switchTo);
+  });
 }
+
 function logout() {
   state.token = '';
   state.me = null;
@@ -269,8 +246,8 @@ function renderGames(){
  const filters=$('#gameFilters');
  if(filters&&!filters.dataset.ready){filters.dataset.ready='1';filters.innerHTML='<button class="gameFilter active" data-game-filter="all">الكل</button>'+games.map(g=>'<button class="gameFilter" data-game-filter="'+g.id+'">'+g.icon+' '+g.name+'</button>').join('');$$('[data-game-filter]').forEach(b=>b.addEventListener('click',()=>{ $$('[data-game-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderGameCards(b.dataset.gameFilter);}));}
  renderGameCards('all'); loadGameSessions();
- $('#createGameSessionBtn')?.addEventListener('click',openCreateGameSession);
- $('#refreshGameSessionsBtn')?.addEventListener('click',loadGameSessions);
+ if(!$('#createGameSessionBtn')?.dataset.bound){$('#createGameSessionBtn')?.addEventListener('click',openCreateGameSession);if($('#createGameSessionBtn'))$('#createGameSessionBtn').dataset.bound='1';}
+ if(!$('#refreshGameSessionsBtn')?.dataset.bound){$('#refreshGameSessionsBtn')?.addEventListener('click',loadGameSessions);if($('#refreshGameSessionsBtn'))$('#refreshGameSessionsBtn').dataset.bound='1';}
 }
 function renderGameCards(filter='all'){
  const list=$('#gamesList');if(!list)return;const games=gameCatalogData().filter(g=>filter==='all'||g.id===filter);
@@ -568,7 +545,7 @@ function bindEvents() {
 
   $('#memberSearchInput').addEventListener('input', (event) => {
     state.memberQuery = event.target.value;
-    renderMemberList(state.publicData?.members || state.publicData?.onlineMembers || []);
+    renderMemberList(state.publicData?.onlineMembers || []);
   });
 
   $('#newGroupBtn').addEventListener('click', createGroup);
@@ -594,7 +571,8 @@ function bindEvents() {
     element.addEventListener('click', () => openAuth(element.dataset.auth));
   });
 
-  $('#platformMenuBtn')?.addEventListener('dblclick', () => toggleSidebar());
+  $('#platformMenuBtn')?.addEventListener('click', () => { const d=$('#platformDrawer'); d?.classList.add('open'); d?.setAttribute('aria-hidden','false'); });
+  $('#closePlatformMenu')?.addEventListener('click', () => { const d=$('#platformDrawer'); d?.classList.remove('open'); d?.setAttribute('aria-hidden','true'); });
 
   $$('nav a').forEach((link) => {
     link.addEventListener('click', () => {
