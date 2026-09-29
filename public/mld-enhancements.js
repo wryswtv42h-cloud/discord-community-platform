@@ -136,7 +136,7 @@
     const headers=token ? {Authorization:'Bearer '+token} : {};
     updateLiveBar('loading','جاري سحب أحدث معلومات المجتمع...');
     try {
-      const response=await fetch('/public',{headers,cache:'no-store'});
+      const response=await fetch('/api/public',{headers,cache:'no-store'});
       if(!response.ok) throw new Error('تعذر تحديث البيانات');
       const data=await response.json();
       window.dispatchEvent(new CustomEvent('mld:public-data',{detail:data}));
@@ -149,13 +149,6 @@
       $('#visitCount') && ($('#visitCount').textContent=data.visits||0);
       $('#heroVisits') && ($('#heroVisits').textContent='◈ '+(data.visits||0)+' زيارات');
       $('#heroStatus') && ($('#heroStatus').textContent='🟢 الحالة: '+(data.serverStatus||'متصل'));
-      if (window.state) {
-        window.state.publicData=data;
-        if (typeof window.renderMemberList==='function') window.renderMemberList(members);
-        if (typeof window.renderGroups==='function') window.renderGroups(data.groups||[]);
-        if (typeof window.renderRatings==='function') window.renderRatings(data.ratings||[]);
-        if (typeof window.renderLeaderboard==='function') window.renderLeaderboard(data.leaderboard||[]);
-      }
       updateLiveBar('ready','آخر تحديث: '+new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
     } catch(error) {
       updateLiveBar('error','تعذر التحديث اللحظي — سيُعاد المحاولة تلقائيًا');
