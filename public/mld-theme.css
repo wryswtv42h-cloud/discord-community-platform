@@ -160,3 +160,9 @@ nav a.active {
     linear-gradient(145deg, #24102f, #0e0915);
   border-color: rgba(241, 205, 233, .28);
 }
+
+
+/* Remove the decorative veil over the welcome hero so the banner and welcome text stay crisp. */
+.heroShell::before,.heroShell::after{display:none!important;}
+.heroShell{filter:none!important;}
+.heroContent,.heroContent *{filter:none!important;backdrop-filter:none!important;}
