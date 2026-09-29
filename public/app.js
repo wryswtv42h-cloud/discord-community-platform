@@ -39,7 +39,7 @@ function renderConfig() {
   const avatar = $('#serverAvatar');
   if (avatar) avatar.src = cfg.avatar || DEFAULT_CONFIG.avatar;
   const hero = $('.heroShell');
-  if (hero) hero.style.background = `linear-gradient(180deg, rgba(10,12,20,0.35), rgba(10,12,20,0.7)), url("${cfg.banner || DEFAULT_CONFIG.banner}") center/cover no-repeat`;
+  if (hero) hero.style.background = `url("${cfg.banner || DEFAULT_CONFIG.banner}") center/cover no-repeat`;
 }
 
 async function api(path, options = {}) {
