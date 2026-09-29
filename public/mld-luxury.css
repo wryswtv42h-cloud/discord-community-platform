@@ -35,3 +35,31 @@ header{height:72px!important;background:rgba(8,6,12,.72)!important;border-bottom
 .registerSuggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:-4px}.suggestionChip{border:1px solid rgba(241,184,223,.18);background:rgba(143,88,183,.1);color:#eaddeb;border-radius:999px;padding:7px 10px;cursor:pointer;font-size:11px}
 .confirmBox{padding:14px;border-radius:16px;background:rgba(241,184,223,.07);border:1px solid rgba(241,184,223,.18)}.confirmActions{display:flex;gap:8px;margin-top:12px}.confirmActions button{flex:1}
 @media(max-width:600px){.heroContent{padding:32px 24px!important}.socialDock{right:12px;bottom:12px}.socialDock a{width:48px;height:48px}}
+
+
+/* MLD v2 organization + live data layer */
+html{scroll-behavior:smooth}
+body{overflow-x:hidden}
+.main{min-width:0}
+.page{max-width:1480px;margin:0 auto}
+.heroWrap{position:relative}
+.mldQuickNav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:16px 0}
+.mldQuickCard{display:flex;align-items:center;gap:12px;min-height:76px;padding:14px 16px;border-radius:20px;text-decoration:none;color:#fff;background:linear-gradient(145deg,rgba(30,21,40,.82),rgba(11,9,15,.9));border:1px solid var(--mld-line);box-shadow:0 14px 38px rgba(0,0,0,.14);transition:transform .2s,border-color .2s,background .2s}
+.mldQuickCard:hover{transform:translateY(-3px);border-color:rgba(241,184,223,.4);background:linear-gradient(145deg,rgba(43,28,53,.9),rgba(13,9,17,.92))}
+.mldQuickIcon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:13px;background:rgba(241,184,223,.08);border:1px solid rgba(241,184,223,.13);color:var(--mld-pink);font-size:18px}
+.mldQuickCard b{display:block;font-size:13px}.mldQuickCard small{display:block;color:#9e92a5;margin-top:3px;font-size:10px}
+.mldLiveBar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 2px;padding:9px 13px;border:1px solid var(--mld-line);border-radius:14px;background:rgba(255,255,255,.025);color:#b9acbf;font-size:11px}
+.mldLiveState{display:flex;align-items:center;gap:7px}.mldLiveDot{width:7px;height:7px;border-radius:50%;background:#b9e7c7;box-shadow:0 0 12px rgba(185,231,199,.65)}
+.mldLiveBar[data-state="loading"] .mldLiveDot{background:#eacde5;animation:mldPulse 1s infinite}
+.mldLiveBar[data-state="error"] .mldLiveDot{background:#e5a6b6}
+.mldRefreshBtn{border:0;background:transparent;color:#d9c8dc;cursor:pointer;font:inherit;padding:4px 7px;border-radius:8px}
+.mldRefreshBtn:hover{background:rgba(241,184,223,.08)}
+.mldSectionHint{margin:-2px 0 14px;color:#8f8396;font-size:11px}
+.panelSection{scroll-margin-top:88px}
+.statsStrip{grid-template-columns:repeat(4,minmax(0,1fr))}
+.memberGrid,.cardGrid,.sessionGrid{align-items:stretch}
+.siteFooter{margin-top:18px}
+@keyframes mldPulse{50%{opacity:.35;transform:scale(.75)}}
+@media(max-width:1100px){.mldQuickNav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.mldQuickNav{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mldQuickCard{min-height:68px;padding:11px 12px}.mldQuickIcon{width:34px;height:34px;flex-basis:34px}.mldLiveBar{font-size:10px}.statsStrip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.mldQuickNav{grid-template-columns:1fr}.mldQuickCard{min-height:62px}}
