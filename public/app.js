@@ -285,11 +285,12 @@ function showGameRoom(s){
   if(s.status==='playing'&&myPlayer){
     if(s.game==='uno') controls='<button class="btn" data-game-action="draw">🃏 سحب كرت</button>';
     else if(s.game==='ludo'||s.game==='jakaro') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button><div class="pieceButtons">'+[0,1,2,3].map(i=>'<button class="btn ghost" data-game-action="piece:'+i+'">قطعة '+(i+1)+'</button>').join('')+'</div>';
-    else if(s.game==='monopoly'||s.game==='maqosar') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button><button class="btn ghost" data-game-action="buy">🏠 شراء</button>';
+    else if(s.game==='monopoly') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button><button class="btn ghost" data-game-action="buy">🏠 شراء</button>';
+    else if(s.game==='maqosar') controls='<button class="btn" data-game-action="roll">🎲 رمي النرد</button>';
     else controls='<button class="btn" data-game-action="roll">🃏 لعب الدور</button>';
   }
   const hand=(myPlayer&&st.hands&&st.hands[mine])||[];
-  const handHtml=s.game==='uno'&&myPlayer&&s.status==='playing'?'<div class="cardHand">'+hand.map((card,i)=>'<button class="playCard" data-game-action="play:'+i+'">'+escapeHtml((card.c||'')+' '+(card.n||''))+'</button>').join('')+'</div>':'';
+  const handHtml=(s.game==='uno'||s.game==='baloot')&&myPlayer&&s.status==='playing'?'<div class="cardHand">'+hand.map((card,i)=>'<button class="playCard" data-game-action="'+(s.game==='uno'?'play:'+i:'card:'+i)+'">'+escapeHtml((card.c||'')+' '+(card.n||''))+'</button>').join('')+'</div>':'';
   const stats=s.players.map(p=>{
     const cash=st.cash?.[p.id];
     const pos=st.positions?.[p.id];
