@@ -232,37 +232,57 @@ function renderGroups(groups = []) {
   });
 }
 
-function renderGames() {
-  const list = $('#gamesList');
-  if (!list) return;
-  const games = [
-    {name:'2048',icon:'🔢',desc:'ألغاز دمج الأرقام — العب وسجّل رقمك القياسي.',path:'/games/2048.html'},
-    {name:'Snake',icon:'🐍',desc:'الثعبان الكلاسيكي مع تحكم باللمس والجوال.',path:'/games/snake.html'},
-    {name:'Tetris',icon:'🧱',desc:'رتّب القطع وامسح الصفوف وارفع المستوى.',path:'/games/tetris.html'},
-    {name:'Sudoku',icon:'🧩',desc:'سودوكو بثلاث درجات صعوبة مع فحص وحل.',path:'/games/sudoku.html'},
-    {name:'Connect Four',icon:'🔴',desc:'أربع متتالية ضد الذكاء الاصطناعي أو لاعب ثانٍ.',path:'/games/connect-four.html'},
-    {name:'Tic-Tac-Toe',icon:'❌',desc:'إكس أو ضد الذكاء الاصطناعي أو لاعبين.',path:'/games/tic-tac-toe.html'}
-  ];
-  list.innerHTML = games.map(game => `
-    <article class="gameCard readyGameCard">
-      <span class="cardPill">${game.icon} لعبة جاهزة</span>
-      <h3>${escapeHtml(game.name)}</h3>
-      <p>${escapeHtml(game.desc)}</p>
-      <div class="cardActions"><button class="btn" type="button" data-ready-game="${game.path}">🎮 العب الآن</button></div>
-    </article>`).join('');
-  $('[data-ready-game]').forEach(button => button.addEventListener('click', () => openReadyGame(button.dataset.readyGame)));
+function gameCatalogData(){return [
+{id:'baloot',name:'بلوت',icon:'🃏',desc:'جلسة سعودية كلاسيكية لأربعة لاعبين.',tone:'gold'},
+{id:'uno',name:'أونو',icon:'🌈',desc:'ألوان + كروت + تحدي سريع.',tone:'rainbow'},
+{id:'jakaro',name:'جاكارو',icon:'🎯',desc:'خطط حركتك وكن أول من يوصل.',tone:'emerald'},
+{id:'monopoly',name:'مونوبولي',icon:'💰',desc:'شراء وتداول ومنافسة على اللوحة.',tone:'violet'},
+{id:'ludo',name:'لودو',icon:'🎲',desc:'سباق الحظ والحركة مع الربع.',tone:'ruby'},
+{id:'maqosar',name:'مقوصر',icon:'👑',desc:'لعبتنا الجديدة — جلسة تنافسية خاصة.',tone:'cyan'}
+];}
+function renderGames(){
+ const list=$('#gamesList'); if(!list)return;
+ const games=gameCatalogData();
+ const filters=$('#gameFilters');
+ if(filters&&!filters.dataset.ready){filters.dataset.ready='1';filters.innerHTML='<button class="gameFilter active" data-game-filter="all">الكل</button>'+games.map(g=>'<button class="gameFilter" data-game-filter="'+g.id+'">'+g.icon+' '+g.name+'</button>').join('');$$('[data-game-filter]').forEach(b=>b.addEventListener('click',()=>{ $$('[data-game-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderGameCards(b.dataset.gameFilter);}));}
+ renderGameCards('all'); loadGameSessions();
+ $('#createGameSessionBtn')?.addEventListener('click',openCreateGameSession);
+ $('#refreshGameSessionsBtn')?.addEventListener('click',loadGameSessions);
 }
-
-function openReadyGame(path) {
-  const title = path.split('/').pop().replace('.html','');
-  openModal(`
-    <div class="gameLauncher">
-      <div class="gameLauncherHead"><div><span class="cardPill">🎮 لعبة جاهزة</span><h2>${escapeHtml(title)}</h2></div><button class="btn ghost" type="button" data-close-game>إغلاق</button></div>
-      <iframe class="gameFrame" src="${escapeHtml(path)}" title="${escapeHtml(title)}" loading="eager" allow="fullscreen"></iframe>
-    </div>`);
-  $('[data-close-game]')?.addEventListener('click', closeModal);
+function renderGameCards(filter='all'){
+ const list=$('#gamesList');if(!list)return;const games=gameCatalogData().filter(g=>filter==='all'||g.id===filter);
+ list.innerHTML=games.map(g=>'<article class="gameCard sessionGameCard tone-'+g.tone+'"><div class="gameArt"><span>'+g.icon+'</span><b>LIVE</b></div><span class="cardPill">'+g.icon+' Multiplayer</span><h3>'+g.name+'</h3><p>'+g.desc+'</p><div class="cardMeta"><span>👥 حتى 4</span><span>🎥 مشاهدون</span><span>⚡ مباشر</span></div><div class="cardActions"><button class="btn" type="button data-create-game="'+g.id+'">إنشاء جلسة</button></div></article>').join('');
+ $$('[data-create-game]').forEach(b=>b.addEventListener('click',()=>openCreateGameSession(b.dataset.createGame)));
 }
-
+async function loadGameSessions(){
+ const el=$('#gameSessionsList');if(!el)return;
+ try{const d=await api('/game-sessions');const items=d.items||[];el.innerHTML=items.length?items.map(s=>'<article class="sessionCard"><div class="sessionTop"><span class="cardPill">'+(gameCatalogData().find(g=>g.id===s.game)?.icon||'🎮')+' '+escapeHtml(gameCatalogData().find(g=>g.id===s.game)?.name||s.game)+'</span><span class="sessionStatus">'+(s.status==='playing'?'🔴 يلعب الآن':'🟢 مفتوحة')+'</span></div><h3>'+escapeHtml(s.name)+'</h3><div class="seatRow">'+s.players.map((p,i)=>'<div class="seat filled"><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><span>'+escapeHtml(p.username)+'</span>'+(i===0?'<small>👑</small>':'')+'</div>').join('')+Array.from({length:Math.max(0,s.maxPlayers-s.players.length)},()=>'<div class="seat empty">＋<span>مقعد فارغ</span></div>').join('')+'</div><div class="cardMeta"><span>👥 '+s.players.length+'/'+s.maxPlayers+'</span><span>👁️ '+s.spectators.length+' مشاهد</span><span>🔑 '+escapeHtml(s.code)+'</span></div><div class="cardActions"><button class="btn" data-join-session="'+s.id+'">دخول</button><button class="btn ghost" data-spectate-session="'+s.id+'">مشاهدة</button></div></article>').join(''):'<div class="emptyState">ما فيه جلسات الآن — كن أول واحد ينشئ جلسة 🔥</div>';
+ $$('[data-join-session]').forEach(b=>b.addEventListener('click',()=>joinGameSession(b.dataset.joinSession,false)));
+ $$('[data-spectate-session]').forEach(b=>b.addEventListener('click',()=>joinGameSession(b.dataset.spectateSession,true)));
+ }catch(e){el.innerHTML='<div class="emptyState">'+escapeHtml(e.message)+'</div>';}
+}
+function openCreateGameSession(gameId='baloot'){
+ if(!state.token)return openAuth('login');
+ const games=gameCatalogData();
+ openModal('<form class="modalForm gameSessionForm" id="createGameForm"><h2>🎮 إنشاء جلسة</h2><p class="subtext">اختر اللعبة وخل الجلسة تطلع للناس مباشرة.</p><label>اللعبة<select id="sessionGame">'+games.map(g=>'<option value="'+g.id+'" '+(g.id===gameId?'selected':'')+'>'+g.icon+' '+g.name+'</option>').join('')+'</select></label><label>اسم الجلسة<input id="sessionName" maxlength="80" placeholder="مثلاً: بلوت الربع"></label><label>عدد اللاعبين<select id="sessionMax"><option>2</option><option>3</option><option selected>4</option></select></label><button class="btn" type="submit">🚀 نشر الجلسة</button></form>');
+ $('#createGameForm').onsubmit=async e=>{e.preventDefault();try{const s=await api('/game-sessions',{method:'POST',body:{game:$('#sessionGame').value,name:$('#sessionName').value,maxPlayers:Number($('#sessionMax').value)}});closeModal();openGameRoom(s.id);loadGameSessions();}catch(err){showToast(err.message)}};
+}
+async function joinGameSession(id,spectator){
+ if(!state.token)return openAuth('login');
+ try{await api('/game-sessions/'+id+'/join',{method:'POST',body:{spectator}});openGameRoom(id);loadGameSessions();}catch(e){showToast(e.message)}
+}
+async function openGameRoom(id){
+ try{const s=await api('/game-sessions/'+id);showGameRoom(s);}catch(e){showToast(e.message)}
+}
+function showGameRoom(s){
+ const game=gameCatalogData().find(g=>g.id===s.game)||gameCatalogData()[0];const mine=state.me?.id;const myPlayer=s.players.find(p=>p.id===mine);const isHost=s.hostId===mine;
+ openModal('<div class="gameRoom tone-'+game.tone+'"><div class="gameRoomHead"><div><span class="cardPill">'+game.icon+' '+game.name+'</span><h2>'+escapeHtml(s.name)+'</h2><p class="subtext">كود الجلسة: <b>'+escapeHtml(s.code)+'</b></p></div><button class="btn ghost" data-close-game>إغلاق</button></div><div class="roomLayout"><div class="boardStage"><div class="virtualBoard"><div class="boardLogo">'+game.icon+'<small>'+game.name+'</small></div><div class="turnBanner"> '+escapeHtml(s.state.lastAction||'الجلسة جاهزة')+'</div><div class="turnGrid">'+s.players.map((p,i)=>'<div class="turnSeat '+(s.state.turn===i?'current':'')+'"><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><b>'+escapeHtml(p.username)+'</b><small>'+(s.state.turn===i?'دورك الآن':'انتظر الدور')+'</small></div>').join('')+'</div><div class="boardActions">'+(s.status==='lobby'&&isHost?'<button class="btn" data-start-session>🚀 ابدأ اللعب</button>':'')+(s.status==='playing'&&myPlayer?'<button class="btn" data-game-action="roll">🎲 حركة</button>':'')+'<button class="btn ghost" data-leave-session>خروج</button></div></div></div><aside class="roomSide"><h3>👥 اللاعبين</h3><div class="roomPlayers">'+s.players.map(p=>'<div><img src="'+escapeHtml(p.avatar||'/server-avatar.svg')+'"><span>'+escapeHtml(p.username)+'</span>'+(p.id===s.hostId?'<b>👑</b>':'')+'</div>').join('')+'</div><h3>👁️ المشاهدون</h3><p class="subtext">'+s.spectators.length+' مشاهد</p><div class="roomChat">'+s.chat.map(c=>'<p><b>'+escapeHtml(c.user)+':</b> '+escapeHtml(c.text)+'</p>').join('')+'</div><div class="chatSend"><input id="gameChatText" maxlength="300" placeholder="اكتب في شات الجلسة..."><button class="btn" data-send-game-chat>إرسال</button></div></aside></div></div>');
+ $('#closeGame')?.addEventListener('click',closeModal);$('[data-close-game]')?.addEventListener('click',closeModal);
+ $('[data-start-session]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/start',{method:'POST',body:{}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
+ $('[data-leave-session]')?.addEventListener('click',async()=>{try{await api('/game-sessions/'+s.id+'/leave',{method:'POST',body:{}});closeModal();loadGameSessions()}catch(e){showToast(e.message)}});
+ $('[data-game-action]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/action',{method:'POST',body:{action:'roll'}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
+ $('[data-send-game-chat]')?.addEventListener('click',async()=>{const t=$('#gameChatText')?.value.trim();if(!t)return;try{await api('/game-sessions/'+s.id+'/chat',{method:'POST',body:{text:t}});const x=await api('/game-sessions/'+s.id);showGameRoom(x)}catch(e){showToast(e.message)}});
+}
 async function sendPrivateMessage(){
   if(!state.token)return openAuth('login');
   const recipient=$('#privateRecipient')?.value.trim(), message=$('#privateText')?.value.trim();
