@@ -1,10 +1,17 @@
 import { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } from 'discord.js';
 
+const sharedToken =
+  process.env.DISCORD_BOT_TOKEN ||
+  process.env.GROUPS_BOT_TOKEN ||
+  process.env.TICKETS_BOT_TOKEN ||
+  process.env.APPLICATIONS_BOT_TOKEN ||
+  process.env.PRIVATE_MESSAGES_BOT_TOKEN;
+
 const definitions = [
-  ['groups', process.env.GROUPS_BOT_TOKEN ? 'GROUPS_BOT_TOKEN' : 'DISCORD_BOT_TOKEN'],
-  ['tickets', 'TICKETS_BOT_TOKEN'],
-  ['applications', 'APPLICATIONS_BOT_TOKEN'],
-  ['privateMessages', 'PRIVATE_MESSAGES_BOT_TOKEN']
+  ['groups'],
+  ['tickets'],
+  ['applications'],
+  ['privateMessages']
 ];
 
 const clients = new Map();
@@ -113,14 +120,7 @@ async function getMembers() {
   }
 }
 
-for (const [name, envName] of definitions) {
-  const token = process.env[envName];
-
-  if (!token) {
-    console.warn(`[discord] ${envName} غير موجود — تم تعطيل بوت ${name}`);
-    continue;
-  }
-
+if (sharedToken) {
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -149,7 +149,8 @@ for (const [name, envName] of definitions) {
         await globalThis.mldDiscord.groupHandlers?.approveGroup(id,decision==='yes');
         await interaction.editReply({content:decision==='yes'?'✅ تم اعتماد القروب وإنشاء موارده.':'❌ تم رفض إنشاء القروب.',components:[]});
       } else if(kind==='join'){
-        const group=globalThis.mldDiscord.groupHandlers?.getGroup?.(globalThis.mldDiscord.groupHandlers?.getRequest?.(id)?.groupId);
+        const request=globalThis.mldDiscord.groupHandlers?.getRequest?.(id);
+        const group=globalThis.mldDiscord.groupHandlers?.getGroup?.(request?.groupId);
         if(!group || group.ownerDiscordId!==interaction.user.id) return interaction.reply({content:'هذا الطلب مخصص لمالك القروب.',ephemeral:true});
         await interaction.deferUpdate();
         await globalThis.mldDiscord.groupHandlers?.decideJoin(id,decision==='yes');
@@ -160,19 +161,16 @@ for (const [name, envName] of definitions) {
       if(!interaction.replied&&!interaction.deferred) await interaction.reply({content:'تعذر تنفيذ الطلب: '+error.message,ephemeral:true}).catch(()=>{});
     }
   });
+
   client.once('ready', () => {
-    console.log(`[discord] ${name} يعمل باسم ${client.user.tag}`);
+    console.log(`[discord] البوت الموحد يعمل باسم ${client.user.tag} — جميع خدمات MLD مفعلة عبر اتصال واحد`);
   });
+  client.on('error', error => console.error('[discord] البوت الموحد:', error.message));
+  client.login(sharedToken).catch(error => console.error('[discord] فشل تسجيل البوت الموحد:', error.message));
 
-  client.on('error', (error) => {
-    console.error(`[discord] ${name}:`, error.message);
-  });
-
-  client.login(token).catch((error) => {
-    console.error(`[discord] فشل تسجيل بوت ${name}:`, error.message);
-  });
-
-  clients.set(name, client);
+  for (const [name] of definitions) clients.set(name, client);
+} else {
+  console.warn('[discord] لا يوجد Discord bot token — تم تعطيل تكامل Discord');
 }
 
 async function sendDM(userId, content) {
