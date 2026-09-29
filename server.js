@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { registerGameRoutes } from './services/game-sessions.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(root, 'data');
@@ -1172,6 +1173,8 @@ app.get(
 /*
  * الحالة العامة
  */
+registerGameRoutes(app, { db, save, id, now, auth });
+
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
