@@ -251,7 +251,7 @@ function renderGames(){
 }
 function renderGameCards(filter='all'){
  const list=$('#gamesList');if(!list)return;const games=gameCatalogData().filter(g=>filter==='all'||g.id===filter);
- list.innerHTML=games.map(g=>'<article class="gameCard sessionGameCard tone-'+g.tone+'"><div class="gameArt"><span>'+g.icon+'</span><b>LIVE</b></div><span class="cardPill">'+g.icon+' Multiplayer</span><h3>'+g.name+'</h3><p>'+g.desc+'</p><div class="cardMeta"><span>👥 حتى 4</span><span>🎥 مشاهدون</span><span>⚡ مباشر</span></div><div class="cardActions"><button class="btn" type="button data-create-game="'+g.id+'">إنشاء جلسة</button></div></article>').join('');
+ list.innerHTML=games.map(g=>'<article class="gameCard sessionGameCard tone-'+g.tone+'"><div class="gameArt"><span>'+g.icon+'</span><b>LIVE</b></div><span class="cardPill">'+g.icon+' Multiplayer</span><h3>'+g.name+'</h3><p>'+g.desc+'</p><div class="cardMeta"><span>👥 حتى 4</span><span>🎥 مشاهدون</span><span>⚡ مباشر</span></div><div class="cardActions"><button class="btn" type="button" data-create-game="'+g.id+'">إنشاء جلسة</button></div></article>').join('');
  $$('[data-create-game]').forEach(b=>b.addEventListener('click',()=>openCreateGameSession(b.dataset.createGame)));
 }
 async function loadGameSessions(){
@@ -283,6 +283,18 @@ function showGameRoom(s){
  $('[data-game-action]')?.addEventListener('click',async()=>{try{const x=await api('/game-sessions/'+s.id+'/action',{method:'POST',body:{action:'roll'}});showGameRoom(x);loadGameSessions()}catch(e){showToast(e.message)}});
  $('[data-send-game-chat]')?.addEventListener('click',async()=>{const t=$('#gameChatText')?.value.trim();if(!t)return;try{await api('/game-sessions/'+s.id+'/chat',{method:'POST',body:{text:t}});const x=await api('/game-sessions/'+s.id);showGameRoom(x)}catch(e){showToast(e.message)}});
 }
+
+let currentJoke=null,currentStory='';
+async function loadJokes(){
+ const el=$('#jokesList'),spot=$('#jokeSpotlight');if(!el)return;
+ try{const d=await api('/jokes');const items=d.items||[];if(items.length){currentJoke=items[0];renderJokeSpotlight(currentJoke);el.innerHTML=items.slice(0,8).map(j=>'<article class="ratingCard"><span class="cardPill">'+escapeHtml(j.author||'ملاذ')+'</span><p>'+escapeHtml(j.text)+'</p><div class="jokeActions"><button data-joke-react="like" data-joke-id="'+j.id+'">👍 '+(j.likes||0)+'</button><button data-joke-react="dislike" data-joke-id="'+j.id+'">👎 '+(j.dislikes||0)+'</button></div></article>').join('');$$('[data-joke-react]').forEach(b=>b.addEventListener('click',()=>reactJoke(b.dataset.jokeId,b.dataset.jokeReact)));}else renderJokeSpotlight(null);}catch(e){if(spot)spot.innerHTML='<div class="emptyState">'+escapeHtml(e.message)+'</div>';}}
+function renderJokeSpotlight(j){const el=$('#jokeSpotlight');if(!el)return;if(!j){el.innerHTML='<div class="emptyState">ما فيه نكت — اضغط غيرها لتوليد واحدة.</div>';return;}el.innerHTML='<div class="jokeCard"><span class="cardPill">✨ '+escapeHtml(j.author||'مولّد ملاذ')+'</span><blockquote>“'+escapeHtml(j.text)+'”</blockquote><div class="jokeActions"><button data-spot-react="like">👍 '+(j.likes||0)+'</button><button data-spot-react="dislike">👎 '+(j.dislikes||0)+'</button><button data-add-joke>✍️ أضف نكتتك</button></div></div>';$$('[data-spot-react]').forEach(b=>b.addEventListener('click',()=>reactJoke(j.id,b.dataset.spotReact)));$('[data-add-joke]')?.addEventListener('click',openAddJoke);}
+async function reactJoke(id,type){if(!state.token)return openAuth('login');try{await api('/jokes/'+id+'/react',{method:'POST',body:{type}});loadJokes();}catch(e){showToast(e.message)}}
+async function nextJoke(){if(!state.token)return openAuth('login');try{const j=await api('/jokes/generate',{method:'POST',body:{}});currentJoke=j;renderJokeSpotlight(j);loadJokes();}catch(e){showToast(e.message)}}
+function openAddJoke(){if(!state.token)return openAuth('login');openModal('<form class="modalForm" id="addJokeForm"><h2>✍️ أضف نكتتك</h2><textarea id="newJokeText" required maxlength="500" placeholder="اكتب نكتتك باللهجة اللي تعجبك..."></textarea><button class="btn" type="submit">نشر النكتة</button></form>');$('#addJokeForm').onsubmit=async e=>{e.preventDefault();try{await api('/jokes',{method:'POST',body:{text:$('#newJokeText').value}});closeModal();showToast('تم نشر النكتة 😂');loadJokes()}catch(err){showToast(err.message)}}}
+async function generateStory(){const genre=$('#storyGenre')?.value||'مغامرة',length=$('#storyLength')?.value||'قصيرة',out=$('#storyOutput');if(!out)return;out.innerHTML='<div class="emptyState">جاري التأليف...</div>';try{const s=await api('/stories/generate',{method:'POST',body:{genre,length}});currentStory=s.text;out.innerHTML='<h3>📖 قصة '+escapeHtml(s.genre)+'</h3><p>'+escapeHtml(s.text)+'</p>';}catch(e){out.innerHTML='<div class="emptyState">'+escapeHtml(e.message)+'</div>';}}
+function speakStory(){if(!currentStory)return showToast('ولّد قصة أولًا');if(!('speechSynthesis' in window))return showToast('المتصفح لا يدعم القراءة الصوتية');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(currentStory);u.lang='ar-SA';u.rate=.92;u.pitch=1;speechSynthesis.speak(u);}
+function stopStory(){if('speechSynthesis' in window)speechSynthesis.cancel();}
 async function sendPrivateMessage(){
   if(!state.token)return openAuth('login');
   const recipient=$('#privateRecipient')?.value.trim(), message=$('#privateText')?.value.trim();
@@ -517,6 +529,11 @@ function bindEvents() {
     $('#addRatingBtn')?.addEventListener('click', addRating);
   $('#cinemaOpen')?.addEventListener('click', openCinema);
   $('#downloadForm')?.addEventListener('submit', submitDownload);
+  $('#nextJokeBtn')?.addEventListener('click',nextJoke);
+  $('#generateStoryBtn')?.addEventListener('click',generateStory);
+  $('#speakStoryBtn')?.addEventListener('click',speakStory);
+  $('#stopStoryBtn')?.addEventListener('click',stopStory);
+  loadJokes();
 
   $('#closeModalBtn').addEventListener('click', closeModal);
   $('#authModal').addEventListener('click', (event) => {
