@@ -570,4 +570,14 @@ async function init() {
 init();
 
 
-document.addEventListener('DOMContentLoaded',()=>{ $('#sendPrivateBtn')?.addEventListener('click',sendPrivateMessage); $('#sendAnonymousBtn')?.addEventListener('click',sendAnonymousMessage); loadPrivateMessages(); });
+document.addEventListener('DOMContentLoaded',()=>{
+ $('#sendPrivateBtn')?.addEventListener('click',sendPrivateMessage);
+ $('#sendAnonymousBtn')?.addEventListener('click',sendAnonymousMessage);
+ $('#nextJokeBtn')?.addEventListener('click',nextJoke);
+ $('#generateStoryBtn')?.addEventListener('click',generateStory);
+ $('#speakStoryBtn')?.addEventListener('click',speakStory);
+ $('#stopStoryBtn')?.addEventListener('click',stopStory);
+ $('#jokes')?.addEventListener('click',e=>{if(e.target.matches('[data-add-joke]'))openAddJoke();});
+ loadPrivateMessages();
+ loadJokes();
+});
