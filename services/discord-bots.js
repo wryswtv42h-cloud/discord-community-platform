@@ -25,8 +25,13 @@ async function resolveUser(discordId) {
 }
 async function verifyUser(discordId) {
   const guild=await resolveGuild();
-  const member=await guild.members.fetch(String(discordId));
-  return Boolean(member?.user && !member.user.bot);
+  try {
+    const member=await guild.members.fetch(String(discordId));
+    return Boolean(member?.user && !member.user.bot);
+  } catch(error) {
+    console.warn('[discord] member verification unavailable:', error.message);
+    return false;
+  }
 }
 async function resolveApprover() {
   const id=process.env.GROUP_APPROVER_DISCORD_ID;
@@ -99,8 +104,13 @@ async function getMembers() {
   const client=Array.from(clients.values()).find(c=>c.isReady());
   if(!client||!globalThis.mldDiscord.guildId)return [];
   const guild=await client.guilds.fetch(globalThis.mldDiscord.guildId);
-  const members=await guild.members.fetch();
-  return Array.from(members.values()).filter(m=>!m.user.bot).map(m=>({id:m.id,name:m.displayName||m.user.globalName||m.user.username,username:m.user.username,avatar:m.displayAvatarURL({extension:'png',size:128}),status:m.presence?.status||'offline',role:m.roles?.highest?.name||'عضو'}));
+  try {
+    const members=await guild.members.fetch();
+    return Array.from(members.values()).filter(m=>!m.user.bot).map(m=>({id:m.id,name:m.displayName||m.user.globalName||m.user.username,username:m.user.username,avatar:m.displayAvatarURL({extension:'png',size:128}),status:m.presence?.status||'offline',role:m.roles?.highest?.name||'عضو'}));
+  } catch(error) {
+    console.warn('[discord] member list unavailable:', error.message);
+    return [];
+  }
 }
 
 for (const [name, envName] of definitions) {
