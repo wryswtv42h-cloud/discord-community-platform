@@ -107,7 +107,7 @@ function renderAuth() {
     `;
     $('#sidebarAuthLink').innerHTML = '<span>🔐</span><span>تسجيل الدخول</span>';
     $('#adminNavLink')?.setAttribute('hidden','');
-    $('#drawerAdminLink')?.setAttribute('hidden','');
+    $('#drawerAdminLink')?.setAttribute('hidden','');\n    $('#drawerAdminFolder')?.setAttribute('hidden','');\n    $('#drawerOwnerFolder')?.setAttribute('hidden','');
     return;
   }
 
@@ -509,8 +509,8 @@ async function loadPublicData() {
     const isStaff = ['owner','admin'].includes(state.me?.role);
     const controlLink = state.me?.role === 'owner' ? '/owner' : '/admin';
     $('#adminNavLink')?.toggleAttribute('hidden', !isStaff);
-    $('#drawerAdminLink')?.toggleAttribute('hidden', !(isStaff && state.me?.role === 'admin'));
-    $('#drawerOwnerLink')?.toggleAttribute('hidden', state.me?.role !== 'owner');
+    $('#drawerAdminLink')?.toggleAttribute('hidden', !(isStaff && state.me?.role === 'admin'));\n    $('#drawerAdminFolder')?.toggleAttribute('hidden', !(isStaff && state.me?.role === 'admin'));
+    $('#drawerOwnerLink')?.toggleAttribute('hidden', state.me?.role !== 'owner');\n    $('#drawerOwnerFolder')?.toggleAttribute('hidden', state.me?.role !== 'owner');
     if (isStaff) {
       if ($('#adminNavLink')) $('#adminNavLink').href = controlLink;
       if ($('#drawerAdminLink')) $('#drawerAdminLink').href = controlLink;
@@ -573,6 +573,18 @@ function bindEvents() {
 
   $('#platformMenuBtn')?.addEventListener('click', () => { const d=$('#platformDrawer'); d?.classList.add('open'); d?.setAttribute('aria-hidden','false'); });
   $('#closePlatformMenu')?.addEventListener('click', () => { const d=$('#platformDrawer'); d?.classList.remove('open'); d?.setAttribute('aria-hidden','true'); });
+  $('.drawerFolderTitle').forEach((button) => {
+    button.addEventListener('click', () => {
+      const items = button.nextElementSibling;
+      if (items) items.toggleAttribute('hidden');
+    });
+  });
+  $('#platformDrawer a').forEach((link) => {
+    link.addEventListener('click', () => {
+      const d=$('#platformDrawer');
+      if (d) { d.classList.remove('open'); d.setAttribute('aria-hidden','true'); }
+    });
+  });
 
   $$('nav a').forEach((link) => {
     link.addEventListener('click', () => {
