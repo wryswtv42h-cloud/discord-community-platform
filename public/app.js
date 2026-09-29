@@ -545,7 +545,7 @@ function bindEvents() {
 
   $('#memberSearchInput').addEventListener('input', (event) => {
     state.memberQuery = event.target.value;
-    renderMemberList(state.publicData?.onlineMembers || []);
+    renderMemberList(state.publicData?.members || state.publicData?.onlineMembers || []);
   });
 
   $('#newGroupBtn').addEventListener('click', createGroup);
