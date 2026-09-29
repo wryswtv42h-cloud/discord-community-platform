@@ -1,0 +1,37 @@
+/* MLD luxury shell — inspired by the supplied avatar's soft pearl/pink/purple direction. */
+:root{
+  --mld-bg:#08070d;--mld-panel:rgba(18,14,27,.88);--mld-panel2:rgba(28,20,39,.9);
+  --mld-pink:#f1b8df;--mld-lilac:#caa8e8;--mld-purple:#8f58b7;--mld-white:#fffaff;
+  --mld-line:rgba(241,184,223,.16);
+}
+body{background:
+ radial-gradient(900px 500px at 12% -5%,rgba(143,88,183,.22),transparent 60%),
+ radial-gradient(700px 420px at 92% 4%,rgba(241,184,223,.13),transparent 60%),
+ linear-gradient(145deg,#07060b 0%,#110b18 48%,#07060b 100%)!important;}
+header{height:72px!important;background:rgba(8,6,12,.72)!important;border-bottom:1px solid var(--mld-line)!important;backdrop-filter:blur(18px)!important}
+.brandMark{box-shadow:0 0 30px rgba(202,168,232,.22)!important}
+.serverCard{box-shadow:0 18px 50px rgba(0,0,0,.22)!important}
+.heroWrap{margin-top:18px}.heroShell{min-height:330px!important;border-radius:30px!important;overflow:hidden;position:relative!important;border:1px solid rgba(241,184,223,.2)!important;box-shadow:0 30px 80px rgba(0,0,0,.34)!important}
+.heroShell:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 20%,rgba(241,184,223,.14),transparent 32%),linear-gradient(90deg,rgba(8,6,12,.78),rgba(8,6,12,.22),rgba(8,6,12,.58));pointer-events:none}
+.heroContent{position:relative;z-index:1;padding:54px!important}.heroBadge{letter-spacing:1.6px}.heroContent h1{font-size:clamp(44px,7vw,82px)!important;text-shadow:0 8px 35px rgba(0,0,0,.3)}
+.statsStrip{margin-top:16px}.statCard{border-radius:22px!important;background:linear-gradient(145deg,rgba(31,22,42,.82),rgba(13,10,19,.82))!important;border-color:var(--mld-line)!important;transition:.22s}.statCard:hover{transform:translateY(-3px);border-color:rgba(241,184,223,.35)!important}
+.panelSection{border-radius:26px!important;background:linear-gradient(145deg,rgba(18,14,27,.88),rgba(10,8,14,.82))!important;border-color:var(--mld-line)!important;box-shadow:0 24px 70px rgba(0,0,0,.18)!important}
+.sectionTitle h2{font-size:1.7rem}.sectionTitle h2:after{content:"";display:block;width:42px;height:2px;margin-top:8px;background:linear-gradient(90deg,var(--mld-pink),transparent);border-radius:9px}
+.btn:not(.ghost){background:linear-gradient(135deg,#fff5fc 0%,#efc1e1 45%,#b77acb 100%)!important;box-shadow:0 10px 28px rgba(183,122,203,.18)!important}
+.btn.ghost,.iconBtn{background:rgba(255,255,255,.035)!important}
+.cardGrid{gap:16px}.infoCard,.groupCard,.gameCard,.ratingCard,.leaderCard,.sessionCard{border-radius:22px!important;border-color:var(--mld-line)!important;background:linear-gradient(145deg,rgba(30,21,40,.88),rgba(12,10,17,.88))!important}
+.cardPill{border-color:rgba(241,184,223,.2)!important;background:rgba(143,88,183,.12)!important}
+.platformDrawer{background:linear-gradient(180deg,#171022,#0a0710)!important;border-left-color:rgba(241,184,223,.2)!important}
+.platformDrawer .drawerMenuGroup{background:rgba(255,255,255,.025)!important;border-color:var(--mld-line)!important}
+.platformDrawer .drawerMenuGroup>b{color:#eacde5!important}
+.platformDrawer a{gap:0!important;background:transparent!important;border-color:transparent!important;border-radius:12px!important;color:#d8c9db!important}
+.platformDrawer a:hover{background:rgba(241,184,223,.08)!important;border-color:rgba(241,184,223,.12)!important}
+.drawerIcon{width:18px;display:inline-grid;place-items:center;margin-left:9px;color:var(--mld-pink)}
+.socialDock{position:fixed;right:18px;bottom:18px;z-index:250;display:flex;flex-direction:column;gap:10px}
+.socialDock a{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;text-decoration:none;background:linear-gradient(145deg,#1d1328,#0e0a13);border:1px solid rgba(241,184,223,.26);box-shadow:0 16px 40px rgba(0,0,0,.38);transition:.22s}
+.socialDock a:hover{transform:translateY(-4px) scale(1.03);border-color:rgba(241,184,223,.6)}
+.socialDock svg{width:23px;height:23px;fill:currentColor}.socialDock .discordFloat{background:linear-gradient(145deg,#7351c9,#b77acb)}
+.socialStrip{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:16px}.socialCard{min-width:170px;display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:17px;text-decoration:none;color:#fff;background:rgba(255,255,255,.035);border:1px solid var(--mld-line);transition:.2s}.socialCard:hover{transform:translateY(-2px);border-color:rgba(241,184,223,.4)}.socialCard svg{width:20px;height:20px;fill:currentColor}.socialCard small{display:block;color:#a99eae;font-size:10px}
+.registerSuggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:-4px}.suggestionChip{border:1px solid rgba(241,184,223,.18);background:rgba(143,88,183,.1);color:#eaddeb;border-radius:999px;padding:7px 10px;cursor:pointer;font-size:11px}
+.confirmBox{padding:14px;border-radius:16px;background:rgba(241,184,223,.07);border:1px solid rgba(241,184,223,.18)}.confirmActions{display:flex;gap:8px;margin-top:12px}.confirmActions button{flex:1}
+@media(max-width:600px){.heroContent{padding:32px 24px!important}.socialDock{right:12px;bottom:12px}.socialDock a{width:48px;height:48px}}
